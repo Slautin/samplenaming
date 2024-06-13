@@ -26,6 +26,8 @@ If you encounter any problem with unknown modules, just run "pip install modulen
 
 ## Usage/Examples
 
+I have put several lines of Python codes to show how to use it. The main code is located at samplenaming/core/snsummary.py. For those who are familar with Python, you can read the source code for additional functions/methods of the SNSummary object.
+
 ```bash
 from samplenaming.core.snglobal import CSV_HEADERS, CSV_HEADERS_SHORT
 print(CSV_HEADERS)
