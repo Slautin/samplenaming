@@ -13,8 +13,9 @@ Step 1: clone the code to your local computer, and then run "python setup.py ins
   cd samplenaming
   python setup.py install
 ```
-Step 2: copy samplenaming.yaml to your root directory.
+Step 2: edit and copy samplenaming.yaml to your root directory. You can use any text editor to change samplenaming.yaml. Below,  I use "vi" command in OS or Linux systems as an example.
 ```bash
+  vi samplenaming.yaml 
   cp samplenaming.yaml ~
 ```
 If you encounter any problem with unknown modules, just run "pip install modulename".   
