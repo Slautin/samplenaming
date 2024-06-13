@@ -1,3 +1,31 @@
+
+# Sample naming for CAMM_MSERC at University of Tennessee, Knoxville
+
+A Python code package for sample naming.
+
+
+## Installation
+
+Install samplenaming with python. 
+Step 1: clone the code to your local computer, and then run "python setup.py install" in the samplenaming folder.
+```bash
+  git clone git@github.com:TaoLiang120/samplenaming.git
+  cd samplenaming
+  python setup.py install
+```
+Step 2: copy samplenaming.yaml to your root directory.
+```bash
+  cp samplenaming.yaml ~
+```
+If you encounter any problem with unknown modules, just run "pip install modulename".   
+## Tao Liang  tliang7@utk.edu
+
+- [@TaoLiang120](https://github.com/TaoLiang120/samplenaming)
+
+
+## Usage/Examples
+
+```bash
 from samplenaming.core.snglobal import CSV_HEADERS, CSV_HEADERS_SHORT
 print(CSV_HEADERS)
 print(CSV_HEADERS_SHORT)
@@ -25,3 +53,5 @@ print("===")
 
 filename = "tmp.csv"
 thissummary.query_save(filename="SNquery_results.csv")
+```
+
