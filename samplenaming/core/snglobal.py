@@ -1,7 +1,6 @@
 import os, sys
 from monty.serialization import loadfn
 import pandas as pd
-import time
 import datetime
 
 try:
@@ -20,7 +19,6 @@ ADD_HEADERS = ["ResearchGroup", "GroupID", "QRcode", "Initials", "Comments"]
 GENERATE_HEADERS = ["SampleFolder", "SampleName", "nFiles"]
 CSV_HEADERS = COMP_HEADERS + SYN_HEADERS + CHAR_HEADERS + ADD_HEADERS + GENERATE_HEADERS
 CSV_HEADERS_SHORT = ["Elements", "Composition", "Synthesis", "Characterization", "QRcode", "nFiles"]
-NANOTIME = time.time_ns()
 ACCESS_DATETIME = datetime.datetime.now()
 
 if not os.path.isfile(os.path.join(FILE_PATH, FILE_CSV)):

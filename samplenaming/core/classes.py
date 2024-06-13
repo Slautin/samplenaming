@@ -2,8 +2,9 @@ import os
 import qrcode
 import shutil
 import json
+import time
 from samplenaming.periodictable.composition import Composition
-from samplenaming.core.snglobal import FILE_PATH, NANOTIME
+from samplenaming.core.snglobal import FILE_PATH
 from samplenaming.core.snglobal import CSV_HEADERS
 from samplenaming.core.snglobal import Synthesis, Characterization, ResearchGroup
 
@@ -189,12 +190,13 @@ class SNEntry:
 
     @classmethod
     def from_input(cls, upload_files=None):
+        nanosec = time.time_ns()
         comp = SNComposition.from_input()
         syns = SNSynthesis.from_input()
         char = SNCharaterization.from_input()
         rgroup = SNResearchgroup.from_input()
         qrstring = comp.elementstr + "/" + "S" + syns.ID
-        qrstring += "_T" + str(NANOTIME)
+        qrstring += "_T" + str(nanosec)
         thisqr = QRCode(qrstring)
         thisqr.generate_qrcode()
         initials = input("Type your name initial: ")
@@ -205,15 +207,15 @@ class SNEntry:
         comments = comments.replace("|", ",")
         thisobj = cls(comp, syns, char, rgroup, qrstring, initials=initials, comments=comments)
         if isinstance(upload_files, list) and len(upload_files) > 0:
-            thisobj.uploading_files(upload_files)
+            thisobj.uploading_files(upload_files, nanosec)
         return thisobj
 
-    def uploading_files(self, upload_files):
+    def uploading_files(self, upload_files, nanosec):
         for i in range(len(upload_files)):
             sf = upload_files[i]
             app = sf.split(".")
             app = app[-1]
-            tf = self.filename + "_F" + str(self.nfiles+1) + "_T" + str(NANOTIME)
+            tf = self.filename + "_F" + str(self.nfiles+1) + "_T" + str(nanosec)
             tf = tf + "." + app
             shutil.copy(sf, os.path.join(FILE_PATH, self.foldname, tf))
             self.nfiles += 1
