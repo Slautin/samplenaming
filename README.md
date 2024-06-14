@@ -26,35 +26,53 @@ If you encounter any problem with unknown modules, just run "pip install modulen
 
 ## Usage/Examples
 
-I have put several lines of Python codes to show how to use it. The main code is located at samplenaming/core/snsummary.py. For those who are familar with Python, you can read the source code for additional functions/methods of the SNSummary object.
+I have put several Python codes to show how to use it. The main code is located at samplenaming/core/snsummary.py. For those who are familar with Python, you can read the source code for additional functions/methods of the SNSummary object.
 
+The firsttime.py is to generate the folder and files. Only run once after installation.
 ```bash
-from samplenaming.core.snglobal import CSV_HEADERS, CSV_HEADERS_SHORT
-print(CSV_HEADERS)
-print(CSV_HEADERS_SHORT)
+import samplenaming.core.config as SNconfig
+SNconfig.init_files()
+```
 
+The add_an_entry.py is to add an entry to database. 
+```bash
 from samplenaming.core.snsummary import SNSummary
 
 thissummary = SNSummary()
-SNSummary.display_entries(thissummary.df, display_style="compact")
-thissummary.add_an_entry()
+
+## add an entry without uploading files
+upload_files = None
+thissummary.add_an_entry(upload_files=upload_files)
 SNSummary.display_entries(thissummary.df, display_style="Full")
 
+## add an entry with uploading files
+upload_files = ["LICENSE", "MANIFEST.in"]
+thissummary.add_an_entry(upload_files=upload_files)
+SNSummary.display_entries(thissummary.df, display_style="compact")
+```
+
+The query.py is to screen entries and save the results
+```bash
+from samplenaming.core.snsummary import SNSummary
+
+print("========== Original Entries ============")
+thissummary = SNSummary()
+SNSummary.display_entries(thissummary.df, display_style="compact")
+
+print("========== After first screening ============")
 elements = ["H"]
 style = "INCLUDE" #option: "EXCLUDE"
 ids = thissummary.query_by_elements(elements, style=style, reset_df=False)
-print("===")
+thissummary.query_display(display_style="compact")
 
+print("========== Continueous screening ============")
 key = "Elements"
-thisvalue = "HO"
+thisvalue = ["HO"]
 ids = thissummary.query_by(key, thisvalue)
-print("===")
-
 display_cols = ["Composition", "Synthesize", "Syn_params", "QRcode"]
 thissummary.query_display(display_style=display_cols)
-print("===")
 
-filename = "tmp.csv"
-thissummary.query_save(filename="SNquery_results.csv")
+### save to file #####
+filename = "SNquery_results.csv"
+thissummary.query_save(filename=filename)
 ```
-
