@@ -2,8 +2,10 @@ import os
 import numpy as np
 import pandas as pd
 from monty.io import zopen
+import datetime
 
-from samplenaming.core.snglobal import FILE_PATH, FILE_CSV, ACCESS_DATETIME, CSV_HEADERS, CSV_HEADERS_SHORT
+from samplenaming.core.snglobal import FILE_PATH, FILE_CSV
+from samplenaming.core.snglobal import CSV_HEADERS, CSV_HEADERS_SHORT
 from samplenaming.core.classes import SNEntry
 from samplenaming.periodictable.composition import Composition
 
@@ -14,13 +16,52 @@ class SNSummary:
         self.list_dicts = self.df.to_dict(orient='records')
         self.nentries = len(self.df)
         self.df4query = self.df.copy(deep=True)
-        inds = np.arange(len(self.df), dtype=int)
-        self.df4query["tmpindex"] = inds
+        self.last_access = datetime.datetime.now()
+
+    def __str__(self):
+        print("=============================================")
+        thismsg = f"last access time: {self.last_access} number of entries: {self.nentries}"
+        print(thismsg)
+        print("=============================================")
+        print(self.df.tail())
+        return thismsg
+
+    def __repr__(self):
+        return self.__str__()
 
     def reset_df4query(self):
         self.df4query = self.df.copy(deep=True)
+
+    def delete_by_inds(self, inds):
+        inds = list(inds)
+        inds = list(set(inds))
+        for i in sorted(inds, reverse=True):
+            qrstring = self.list_dicts[i]["QRcode"]
+            qrstring = qrstring.split("_")
+            foldname = qrstring[0]
+            fname = qrstring[-1]
+            for file in os.listdir(os.path.join(FILE_PATH, foldname)):
+                if fname in file:
+                    os.remove(os.path.join(FILE_PATH, foldname, file))
+            del self.list_dicts[i]
+        self.nentries = len(self.list_dicts)
+        self.df = pd.DataFrame(self.list_dicts, columns=CSV_HEADERS)
+        self.df.to_csv(os.path.join(FILE_PATH, FILE_CSV), sep="|", index=False)
+        self.reset_df4query()
+
+    def delete_by_ids(self, ids):
         inds = np.arange(len(self.df), dtype=int)
-        self.df4query["tmpindex"] = inds
+        df = self.df.set_index("SampleID")
+        df["tmpindex"] = inds
+        df = df.loc(ids)
+        inds = df["tmpindex"].to_numpy()
+        self.delete_by_inds(inds)
+
+    def delete_by_qrstring(self, value):
+        ys = self.df["QRcode"].to_numpy()
+        inds = np.arange(len(ys), dtype=int)
+        inds = np.compress(ys == value, inds)
+        self.delete_by_inds(inds)
 
     @staticmethod
     def display_entries(thisdf, display_style="Compact"):
@@ -59,29 +100,6 @@ class SNSummary:
         self.nentries = len(self.df)
         self.reset_df4query()
 
-    def delete_by_ids(self, inds):
-        inds = list(inds)
-        inds = list(set(inds))
-        for i in sorted(inds, reverse=True):
-            qrstring = self.list_dicts[i]["QRcode"]
-            qrstring = qrstring.split("_")
-            foldname = qrstring[0]
-            fname = qrstring[-1]
-            for file in os.listdir(os.path.join(FILE_PATH, foldname)):
-                if fname in file:
-                    os.remove(os.path.join(FILE_PATH, foldname, file))
-            del self.list_dicts[i]
-        self.nentries = len(self.list_dicts)
-        self.df = pd.DataFrame(self.list_dicts, columns=CSV_HEADERS)
-        self.df.to_csv(os.path.join(FILE_PATH, FILE_CSV), sep="|", index=False)
-        self.reset_df4query()
-
-    def delete_by_qrstring(self, value):
-        ys = self.df["QRcode"].to_numpy()
-        inds = np.arange(len(ys), dtype=int)
-        inds = np.compress(ys == value, inds)
-        self.delete_by_ids(inds)
-
     def query_save(self, filename="SNquery_results.csv"):
         SNSummary.display_entries(self.df4query, display_style="Compact")
         self.df4query.to_csv(filename, sep="|", index=False)
@@ -116,31 +134,24 @@ class SNSummary:
         bads = np.array(bads).astype(int)
         inds = np.delete(inds, bads)
         self.df4query = self.df4query.iloc[inds]
-        inds = self.df4query["tmpindex"].to_numpy()
-        return inds
+        ids = self.df4query["SampleID"].to_numpy()
+        return ids
 
     def query_by_ncompons(self, ncompons, reset_df=False):
         if reset_df:
             self.reset_df4query()
         ys = self.df4query["Elements"].to_numpy()
-        inds = np.arange(len(ys), dtype=int)
-        bads = []
+        inds = []
         for i in range(len(ys)):
             compstr = ys[i]
             comp = Composition(compstr)
             thisn = len(comp.elements)
-            isvalid = True
             if thisn in ncompons:
-                pass
-            else:
-                isvalid = False
-            if not isvalid:
-                bads.append(i)
-        bads = np.array(bads).astype(int)
-        inds = np.delete(inds, bads)
+                inds.append(i)
+        inds = np.array(inds).astype(int)
         self.df4query = self.df4query.iloc[inds]
-        inds = self.df4query["tmpindex"].to_numpy()
-        return inds
+        ids = self.df4query["SampleID"].to_numpy()
+        return ids
 
     def query_by(self, key, values, reset_df=False):
         if reset_df:
@@ -158,14 +169,31 @@ class SNSummary:
                 linds = np.compress(ys == value, linds)
                 inds = np.append(inds, linds)
         self.df4query = self.df4query.iloc[inds]
-        inds = self.df4query["tmpindex"].to_numpy()
-        return inds
+        ids = self.df4query["SampleID"].to_numpy()
+        return ids
 
-    def query_by_ids(self, inds):
-        self.reset_df4query()
-        inds = np.array(inds)
+    def query_by_key_value_in(self, key, value, reset_df=False):
+        if reset_df:
+            self.reset_df4query()
+        ys = self.df4query[key].to_numpy()
+        inds = []
+        for i in range(len(ys)):
+            thisv = ys[i]
+            if value in thisv:
+                inds.append(i)
+        inds = np.array(inds).astype(int)
         self.df4query = self.df4query.iloc[inds]
-        return inds
+        ids = self.df4query["SampleID"].to_numpy()
+        return ids
+
+    def query_by_ids(self, ids):
+        ids = np.array(ids, dtype=int)
+        self.reset_df4query()
+        self.df4query = self.df4query.set_index("SampleID")
+        self.df4query = self.df4query.loc[ids]
+        sids = self.df4query.index.to_numpy()
+        self.df4query = self.df4query.reset_index()
+        self.df4query["SampleID"] = sids
 
     def query_by_qrstring(self, value):
         self.reset_df4query()
@@ -173,16 +201,5 @@ class SNSummary:
         inds = np.arange(len(ys), dtype=int)
         inds = np.compress(ys == value, inds)
         self.df4query = self.df4query.iloc[inds]
-        inds = self.df4query["tmpindex"].to_numpy()
-        return inds
-
-    def __str__(self):
-        print("=============================================")
-        thismsg = f"last access time: {ACCESS_DATETIME} number of entries: {self.nentries}"
-        print(thismsg)
-        print("=============================================")
-        print(self.df.tail())
-        return thismsg
-
-    def __repr__(self):
-        return self.__str__()
+        ids = self.df4query["SampleID"].to_numpy()
+        return ids

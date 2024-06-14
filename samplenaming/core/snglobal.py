@@ -1,7 +1,5 @@
 import os, sys
 from monty.serialization import loadfn
-import pandas as pd
-import datetime
 
 try:
     config_vars = loadfn(os.path.join(os.path.expanduser('~'), 'samplenaming.yaml'))
@@ -11,19 +9,15 @@ except:
 
 FILE_PATH = config_vars["FILE_PATH"]
 FILE_CSV = "SampleNaming.csv"
+FILE_NENTRIES = "entrycounter.txt"
 
 COMP_HEADERS = ["Elements", "Composition"]
-SYN_HEADERS = ["Synthesis", "SynID", "SynParams"]
-CHAR_HEADERS = ["Characterization", "CharID", "CharParams"]
-ADD_HEADERS = ["ResearchGroup", "GroupID", "QRcode", "Initials", "Comments"]
-GENERATE_HEADERS = ["SampleFolder", "SampleName", "nFiles"]
+SYN_HEADERS = ["Synthesis", "SynParams"]
+CHAR_HEADERS = ["Characterization", "CharParams"]
+ADD_HEADERS = ["ResearchGroup", "QRcode", "Initials", "Comments"]
+GENERATE_HEADERS = ["DateTime", "nFiles", "SampleFolder", "SampleName", "SampleID"]
 CSV_HEADERS = COMP_HEADERS + SYN_HEADERS + CHAR_HEADERS + ADD_HEADERS + GENERATE_HEADERS
-CSV_HEADERS_SHORT = ["Elements", "Composition", "Synthesis", "Characterization", "QRcode", "nFiles"]
-ACCESS_DATETIME = datetime.datetime.now()
-
-if not os.path.isfile(os.path.join(FILE_PATH, FILE_CSV)):
-    thisdf = pd.DataFrame(columns=CSV_HEADERS)
-    thisdf.to_csv(os.path.join(FILE_PATH, FILE_CSV), sep="|", index=False)
+CSV_HEADERS_SHORT = ["Elements", "Composition", "Synthesis", "Characterization", "Comments", "SampleID"]
 
 Synthesis = {
     "Casting": {
@@ -82,4 +76,3 @@ ResearchGroup = {
         "ID": "A"
     },
 }
-

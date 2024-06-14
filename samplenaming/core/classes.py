@@ -3,10 +3,11 @@ import qrcode
 import shutil
 import json
 import time
-from samplenaming.periodictable.composition import Composition
-from samplenaming.core.snglobal import FILE_PATH
-from samplenaming.core.snglobal import CSV_HEADERS
+import datetime
 from samplenaming.core.snglobal import Synthesis, Characterization, ResearchGroup
+from samplenaming.core.snglobal import FILE_PATH, CSV_HEADERS
+from samplenaming.core.config import get_nentries, write_nentries
+from samplenaming.periodictable.composition import Composition
 
 
 class SNComposition:
@@ -154,33 +155,36 @@ class SNResearchgroup:
 class QRCode:
     def __init__(self, qrstring):
         self.qrstring = qrstring
-        instrs = qrstring.split("_")
-        self.foldname = instrs[0]
-        self.filename = instrs[-1] + "_QR.png"
 
-    def generate_qrcode(self):
+    def generate_qrcode(self, foldname):
+        filename = self.qrstring.split("_")
+        filename = filename[-1]
+        filename = filename + "_QR.png"
         img = qrcode.make(self.qrstring)
-        img.save(self.filename)
-        if not os.path.isdir(os.path.join(FILE_PATH, self.foldname)):
-            os.makedirs(os.path.join(FILE_PATH, self.foldname))
-        img.save(os.path.join(FILE_PATH, self.foldname, self.filename))
+        img.save(filename)
+        if not os.path.isdir(os.path.join(FILE_PATH, foldname)):
+            os.makedirs(os.path.join(FILE_PATH, foldname))
+        img.save(os.path.join(FILE_PATH, foldname, filename))
 
     def __str__(self):
-        return f"QR string: {self.qrstring} foldname: {self.foldname} filename: {self.filename}."
+        return f"QR string: {self.qrstring}."
 
     def __repr__(self):
         return self.__str__()
 
 
 class SNEntry:
-    def __init__(self, comp, syns, char, rgroup, qrstring, initials="NA", comments="NA"):
+    def __init__(self, comp, syns, char, rgroup, qrstring, sampleid, sdatetime, initials="NA", comments="NA"):
         self.comp = comp
         self.syns = syns
         self.char = char
         self.rgroup = rgroup
         self.qrstring = qrstring
+        self.sampleid = sampleid
+        self.sdatetime = sdatetime
         self.initials = initials
         self.comments = comments
+
         self.foldname = comp.elementstr + "/" + "S" + syns.ID
         if not os.path.isdir(os.path.join(FILE_PATH, self.foldname)):
             os.makedirs(os.path.join(FILE_PATH, self.foldname))
@@ -195,30 +199,36 @@ class SNEntry:
         syns = SNSynthesis.from_input()
         char = SNCharaterization.from_input()
         rgroup = SNResearchgroup.from_input()
-        qrstring = comp.elementstr + "/" + "S" + syns.ID
-        qrstring += "_T" + str(nanosec)
+        foldname = comp.elementstr + "/" + "S" + syns.ID
+        qrstring = foldname + "_T" + str(nanosec)
         thisqr = QRCode(qrstring)
-        thisqr.generate_qrcode()
+        thisqr.generate_qrcode(foldname)
         initials = input("Type your name initial: ")
         initials = initials.strip()
         initials = initials.replace("|", ",")
         comments = input("Type comments: ")
         comments = comments.strip()
         comments = comments.replace("|", ",")
-        thisobj = cls(comp, syns, char, rgroup, qrstring, initials=initials, comments=comments)
-        if isinstance(upload_files, list) and len(upload_files) > 0:
-            thisobj.uploading_files(upload_files, nanosec)
-        return thisobj
+        sampleid = get_nentries()
+        sampleid += 1
+        write_nentries(sampleid)
+        sdatetime = str(datetime.datetime.now())
+        thisobj = cls(comp, syns, char, rgroup, qrstring, sampleid, sdatetime, initials=initials, comments=comments)
 
-    def uploading_files(self, upload_files, nanosec):
-        for i in range(len(upload_files)):
-            sf = upload_files[i]
-            app = sf.split(".")
-            app = app[-1]
-            tf = self.filename + "_F" + str(self.nfiles+1) + "_T" + str(nanosec)
-            tf = tf + "." + app
-            shutil.copy(sf, os.path.join(FILE_PATH, self.foldname, tf))
-            self.nfiles += 1
+        if isinstance(upload_files, list) and len(upload_files) > 0:
+            for i in range(len(upload_files)):
+                sf = upload_files[i]
+                if "." in sf:
+                    app = sf.split(".")
+                    app = app[-1]
+                else:
+                    app = "none"
+                tf = thisobj.filename + "_T" + str(nanosec) + "_F" + str(thisobj.nfiles + 1)
+                tf = tf + "." + app
+                shutil.copy(sf, os.path.join(FILE_PATH, thisobj.foldname, tf))
+                thisobj.nfiles += 1
+
+        return thisobj
 
     def to_dict(self):
         thisdict = {}
@@ -230,8 +240,6 @@ class SNEntry:
                 thisdict[key] = self.comp.compstr
             elif key == "Synthesis":
                 thisdict[key] = self.syns.method
-            elif key == "SynID":
-                thisdict[key] = self.syns.ID
             elif key == "SynParams":
                 tmpstr = json.dumps(self.syns.params)
                 tmpstr = tmpstr.strip()
@@ -239,8 +247,6 @@ class SNEntry:
                 thisdict[key] = tmpstr
             elif key == "Characterization":
                 thisdict[key] = self.char.method
-            elif key == "CharID":
-                thisdict[key] = self.char.ID
             elif key == "CharParams":
                 tmpstr = json.dumps(self.char.params)
                 tmpstr = tmpstr.strip()
@@ -248,24 +254,26 @@ class SNEntry:
                 thisdict[key] = tmpstr
             elif key == "ResearchGroup":
                 thisdict[key] = self.rgroup.PIs
-            elif key == "GroupID":
-                thisdict[key] = self.rgroup.ID
             elif key == "QRcode":
                 thisdict[key] = self.qrstring
             elif key == "Initials":
                 thisdict[key] = self.initials
             elif key == "Comments":
                 thisdict[key] = self.comments
+            elif key == "DateTime":
+                thisdict[key] = self.sdatetime
+            elif key == "nFiles":
+                thisdict[key] = self.nfiles
             elif key == "SampleFolder":
                 thisdict[key] = self.foldname
             elif key == "SampleName":
                 thisdict[key] = self.filename
-            elif key == "nFiles":
-                thisdict[key] = self.nfiles
+            elif key == "SampleID":
+                thisdict[key] = self.sampleid
         return thisdict
 
     def __str__(self):
-        return f"filename: {self.filename} QRstring: {self.qrstring} foldname: {self.foldname} nfiles: {self.nfiles}."
+        return f"sampleid: {self.sampleid} foldname:{self.foldname} filename: {self.filename}."
 
     def __repr__(self):
         return self.__str__()
