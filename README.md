@@ -83,3 +83,11 @@ thissummary.query_display(display_style=display_cols)
 filename = "SNquery_results.csv"
 thissummary.query_save(filename=filename)
 ```
+
+The querying functions with return of sampleids in SNSummary:
+query_by_ncompons(ncompons, reset_df=False); ncompons: list of number of elements, eg. [3, 4, 5]; reset_df: if False continueous querying, else reset to original df
+query_by_elements(elements, style="INCLUDE", reset_df=False), elements: list, style: "INCLUDE" or "EXCLUDE", 
+query_by(key, values, reset_df=False), key: keyword in SNSummary, values: list of values 
+query_by_key_value_in(key, value, reset_df=False), key: keyword in SNSummary, value: value 
+query_by_qrstring(value), value: qrstring
+query_by_ids(sids), sids: list of sample ids
