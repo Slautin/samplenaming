@@ -13,7 +13,7 @@ from samplenaming.periodictable.composition import Composition
 class SNSummary:
     def __init__(self):
         self.df = pd.read_csv(os.path.join(FILE_PATH, FILE_CSV), sep="|")
-        self.list_dicts = self.df.to_dict(orient='records')
+        self.df = self.df.set_index("SID", drop=True)
         self.nentries = len(self.df)
         self.df4query = self.df.copy(deep=True)
         self.last_access = datetime.datetime.now()
@@ -32,36 +32,24 @@ class SNSummary:
     def reset_df4query(self):
         self.df4query = self.df.copy(deep=True)
 
-    def delete_by_inds(self, inds):
-        inds = list(inds)
-        inds = list(set(inds))
-        for i in sorted(inds, reverse=True):
-            qrstring = self.list_dicts[i]["QRcode"]
+    def delete_by_ids(self, ids):
+        for i in sorted(ids, reverse=True):
+            qrstring = self.df.at[i, "QRcode"]
             qrstring = qrstring.split("_")
             foldname = qrstring[0]
             fname = qrstring[-1]
             for file in os.listdir(os.path.join(FILE_PATH, foldname)):
                 if fname in file:
                     os.remove(os.path.join(FILE_PATH, foldname, file))
-            del self.list_dicts[i]
-        self.nentries = len(self.list_dicts)
-        self.df = pd.DataFrame(self.list_dicts, columns=CSV_HEADERS)
-        self.df.to_csv(os.path.join(FILE_PATH, FILE_CSV), sep="|", index=False)
+            self.df = self.df.drop(index=i)
+        self.nentries = len(self.df)
         self.reset_df4query()
-
-    def delete_by_ids(self, ids):
-        inds = np.arange(len(self.df), dtype=int)
-        df = self.df.set_index("SampleID")
-        df["tmpindex"] = inds
-        df = df.loc(ids)
-        inds = df["tmpindex"].to_numpy()
-        self.delete_by_inds(inds)
 
     def delete_by_qrstring(self, value):
         ys = self.df["QRcode"].to_numpy()
-        inds = np.arange(len(ys), dtype=int)
-        inds = np.compress(ys == value, inds)
-        self.delete_by_inds(inds)
+        ids = self.df.index.to_numpy()
+        ids = np.compress(ys == value, ids)
+        self.delete_by_ids(ids)
 
     @staticmethod
     def display_entries(thisdf, display_style="Compact"):
@@ -80,13 +68,10 @@ class SNSummary:
     @staticmethod
     def to_file(thisdict):
         filename = os.path.join(FILE_PATH, FILE_CSV)
-        thisstr = ""
+        thisstr = str(thisdict["SampleID"])
         for k in range(len(CSV_HEADERS)):
             key = CSV_HEADERS[k]
-            if k == 0:
-                thisstr = str(thisdict[key])
-            else:
-                thisstr += "|"+str(thisdict[key])
+            thisstr += "|"+str(thisdict[key])
         if len(thisstr) > 20:
             with zopen(filename, "a") as f:
                 f.write("\n".join([thisstr])+"\n")
@@ -95,13 +80,32 @@ class SNSummary:
         thisentry = SNEntry.from_input(upload_files=upload_files)
         thisdict = thisentry.to_dict()
         SNSummary.to_file(thisdict)
-        self.df.loc[len(self.df)] = thisdict
-        self.list_dicts.append(thisdict)
+        self.df.loc[thisdict["SampleID"]] = thisdict
+        self.nentries = len(self.df)
+        self.reset_df4query()
+
+    def add_an_entry_from_id(self, thisid, upload_files=None):
+        indict = self.df.loc[thisid].to_dict()
+        thisentry = SNEntry.from_history(indict, upload_files=upload_files)
+        thisdict = thisentry.to_dict()
+        SNSummary.to_file(thisdict)
+        self.df.loc[thisdict["SampleID"]] = thisdict
+        self.nentries = len(self.df)
+        self.reset_df4query()
+
+    def add_an_entry_from_qrcode(self, value, upload_files=None):
+        ys = self.df["QRcode"].to_numpy()
+        ids = self.df.index.to_numpy()
+        ids = np.compress(ys == value, ids)
+        indict = self.df.iloc[ids[0]].to_dict()
+        thisentry = SNEntry.from_history(indict, upload_files=upload_files)
+        thisdict = thisentry.to_dict()
+        SNSummary.to_file(thisdict)
+        self.df.loc[thisdict["SampleID"]] = thisdict
         self.nentries = len(self.df)
         self.reset_df4query()
 
     def query_save(self, filename="SNquery_results.csv"):
-        SNSummary.display_entries(self.df4query, display_style="Compact")
         self.df4query.to_csv(filename, sep="|", index=False)
 
     def query_display(self, display_style="Compact"):
@@ -134,7 +138,7 @@ class SNSummary:
         bads = np.array(bads).astype(int)
         inds = np.delete(inds, bads)
         self.df4query = self.df4query.iloc[inds]
-        ids = self.df4query["SampleID"].to_numpy()
+        ids = self.df4query.index.to_numpy()
         return ids
 
     def query_by_ncompons(self, ncompons, reset_df=False):
@@ -150,7 +154,7 @@ class SNSummary:
                 inds.append(i)
         inds = np.array(inds).astype(int)
         self.df4query = self.df4query.iloc[inds]
-        ids = self.df4query["SampleID"].to_numpy()
+        ids = self.df4query.index.to_numpy()
         return ids
 
     def query_by(self, key, values, reset_df=False):
@@ -169,7 +173,7 @@ class SNSummary:
                 linds = np.compress(ys == value, linds)
                 inds = np.append(inds, linds)
         self.df4query = self.df4query.iloc[inds]
-        ids = self.df4query["SampleID"].to_numpy()
+        ids = self.df4query.index.to_numpy()
         return ids
 
     def query_by_key_value_in(self, key, value, reset_df=False):
@@ -183,17 +187,13 @@ class SNSummary:
                 inds.append(i)
         inds = np.array(inds).astype(int)
         self.df4query = self.df4query.iloc[inds]
-        ids = self.df4query["SampleID"].to_numpy()
+        ids = self.df4query.index.to_numpy()
         return ids
 
     def query_by_ids(self, ids):
         ids = np.array(ids, dtype=int)
         self.reset_df4query()
-        self.df4query = self.df4query.set_index("SampleID")
         self.df4query = self.df4query.loc[ids]
-        sids = self.df4query.index.to_numpy()
-        self.df4query = self.df4query.reset_index()
-        self.df4query["SampleID"] = sids
 
     def query_by_qrstring(self, value):
         self.reset_df4query()
@@ -201,5 +201,5 @@ class SNSummary:
         inds = np.arange(len(ys), dtype=int)
         inds = np.compress(ys == value, inds)
         self.df4query = self.df4query.iloc[inds]
-        ids = self.df4query["SampleID"].to_numpy()
+        ids = self.df4query.index.to_numpy()
         return ids

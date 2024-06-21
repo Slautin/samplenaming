@@ -1,13 +1,19 @@
 import os
 import qrcode
 import shutil
-import json
-import time
+#import time
 import datetime
-from samplenaming.core.snglobal import Synthesis, Characterization, ResearchGroup
+from samplenaming.core.snglobal import Synthesis, Characterization
 from samplenaming.core.snglobal import FILE_PATH, CSV_HEADERS
 from samplenaming.core.config import get_nentries, write_nentries
 from samplenaming.periodictable.composition import Composition
+
+
+def input2string(instring):
+    instring = str(instring)
+    instring = instring.strip()
+    instring = instring.replace("|", ",")
+    return instring
 
 
 class SNComposition:
@@ -25,6 +31,19 @@ class SNComposition:
         thisobj = cls(compstr)
         return thisobj
 
+    @classmethod
+    def from_history(cls, compstr):
+        print(f"The existing composition is {compstr}.")
+        thisbool = input("Want to modify (Y for yes and N for no)?")
+        if thisbool[0].upper() == "Y":
+            thisbool = True
+        else:
+            thisbool = False
+        if thisbool:
+            compstr = input("Type composition (eg: H2O): ")
+        thisobj = cls(compstr)
+        return thisobj
+
     def __str__(self):
         return f"The elementstr: {self.elementstr} compstr: {self.compstr}."
 
@@ -33,120 +52,134 @@ class SNComposition:
 
 
 class SNSynthesis:
-    def __init__(self, thisdict):
-        for key, value in thisdict.items():
-            self.method = key
-            self.params = value
-        self.ID = self.params["ID"]
+    def __init__(self, method, details):
+        self.method = method
+        if self.method == "Unknown":
+            details = "NA"
+        self.details = input2string(details)
 
     @classmethod
     def from_input(cls):
-        thisdict = {}
         print("List of synthesis methods: ")
-        indict = {}
-        i = 1
-        for key in Synthesis:
-            print(f"{i} -- {key}")
-            indict[str(i)] = key
-            i += 1
+        for i in range(len(Synthesis)):
+            print(f"{i+1} -- {Synthesis[i]}")
+
         instr = input("Select method (eg: 1): ")
         instr = instr.strip()
-        method = indict[instr]
-        indict = {}
-        for key in Synthesis[method]:
-            if key == "ID":
-                indict[key] = Synthesis[method][key]
+        try:
+            method = Synthesis[int(instr)-1]
+        except:
+            method = "Unknown"
+        if method == "Unknown":
+            details = "NA"
+        else:
+            details = input(f"Type details of {method}: ")
+        thisobj = cls(method, details)
+        return thisobj
+
+    @classmethod
+    def from_history(cls, method, details):
+        print(f"The existing method is {method}.")
+        thisbool = input("Want to modify (Y for yes and N for no)?")
+        if thisbool[0].upper() == "Y":
+            thisbool = True
+        else:
+            thisbool = False
+        if thisbool:
+            print("List of synthesis methods: ")
+            for i in range(len(Synthesis)):
+                print(f"{i + 1} -- {Synthesis[i]}")
+
+            instr = input("Select method (eg: 1): ")
+            instr = instr.strip()
+            try:
+                method = Synthesis[int(instr) - 1]
+            except:
+                method = "Unknown"
+        if method == "Unknown":
+            details = "NA"
+        else:
+            print(f"The existing details for {method} is {details}.")
+            thisbool = input("Want to modify (Y for yes and N for no)?")
+            if thisbool[0].upper() == "Y":
+                thisbool = True
             else:
-                instr = input(f"Type {key} setting: ")
-                instr = instr.strip()
-                instr = instr.replace("|", ",")
-                indict[key] = instr
-        thisdict[method] = indict
-        thisobj = cls(thisdict)
+                thisbool = False
+            if thisbool:
+                details = input(f"Type details of {method}: ")
+        thisobj = cls(method, details)
         return thisobj
 
     def __str__(self):
-        return f"Synthesis method: {self.method} params: {self.params}."
+        return f"Synthesis method: {self.method} details: {self.details}."
 
     def __repr__(self):
         return self.__str__()
 
 
 class SNCharaterization:
-    def __init__(self, thisdict):
-        for key, value in thisdict.items():
-            self.method = key
-            self.params = value
-        self.ID = self.params["ID"]
+    def __init__(self, method, details):
+        self.method = method
+        if self.method == "Unknown":
+            details = "NA"
+        self.details = input2string(details)
 
     @classmethod
     def from_input(cls):
-        thisdict = {}
-        print("List of characterization methods: ")
-        indict = {}
-        i = 1
-        for key in Characterization:
-            print(f"{i} -- {key}")
-            indict[str(i)] = key
-            i += 1
+        print("List of synthesis methods: ")
+        for i in range(len(Characterization)):
+            print(f"{i+1} -- {Characterization[i]}")
+
         instr = input("Select method (eg: 1): ")
         instr = instr.strip()
-        method = indict[instr]
-        indict = {}
-        for key in Characterization[method]:
-            if key == "ID":
-                indict[key] = Characterization[method][key]
-            else:
-                instr = input(f"Type {key} setting: ")
-                instr = instr.strip()
-                instr = instr.replace("|", ",")
-                indict[key] = instr
-        thisdict[method] = indict
-        thisobj = cls(thisdict)
+        try:
+            method = Characterization[int(instr)-1]
+        except:
+            method = "Unknown"
+
+        if method == "Unknown":
+            details = "NA"
+        else:
+            details = input(f"Type details of {method}: ")
+        thisobj = cls(method, details)
         return thisobj
-
-    def __str__(self):
-        return f"Charact. method: {self.method} params: {self.params}."
-
-    def __repr__(self):
-        return self.__str__()
-
-
-class SNResearchgroup:
-    def __init__(self, thisdict):
-        for key, value in thisdict.items():
-            self.PIs = key
-            self.params = value
-        self.ID = self.params["ID"]
 
     @classmethod
-    def from_input(cls):
-        thisdict = {}
-        print("List of research groups: ")
-        indict = {}
-        i = 1
-        for key in ResearchGroup:
-            print(f"{i} -- {key}")
-            indict[str(i)] = key
-            i += 1
-        instr = input("Select research group (eg: 1): ")
-        instr = instr.strip()
-        pis = indict[instr]
-        indict = {}
-        for key in ResearchGroup[pis]:
-            if key == "ID":
-                indict[key] = ResearchGroup[pis][key]
+    def from_history(cls, method, details):
+        print(f"The existing method is {method}.")
+        thisbool = input("Want to modify (Y for yes and N for no)?")
+        if thisbool[0].upper() == "Y":
+            thisbool = True
+        else:
+            thisbool = False
+        if thisbool:
+            print("List of synthesis methods: ")
+            for i in range(len(Characterization)):
+                print(f"{i + 1} -- {Characterization[i]}")
+
+            instr = input("Select method (eg: 1): ")
+            instr = instr.strip()
+            try:
+                method = Characterization[int(instr) - 1]
+            except:
+                method = "Unknown"
+
+        if method == "Unknown":
+            details = "NA"
+        else:
+            print(f"The existing details for {method} is {details}.")
+            thisbool = input("Want to modify (Y for yes and N for no)?")
+            if thisbool[0].upper() == "Y":
+                thisbool = True
             else:
-                instr = input(f"Type {key} setting: ")
-                instr = instr.strip()
-                instr = instr.replace("|", ",")
-                indict[key] = instr
-        thisdict[pis] = indict
-        thisobj = cls(thisdict)
+                thisbool = False
+            if thisbool:
+                details = input(f"Type details of {method}: ")
+        thisobj = cls(method, details)
         return thisobj
 
     def __str__(self):
-        return f"Research PIs: {self.PIs} params: {self.params}."
+        return f"Charact. method: {self.method} details: {self.details}."
 
     def __repr__(self):
         return self.__str__()
@@ -154,6 +187,7 @@ class SNResearchgroup:
 
 class QRCode:
     def __init__(self, qrstring):
+        qrstring = input2string(qrstring)
         self.qrstring = qrstring
 
     def generate_qrcode(self, foldname):
@@ -174,47 +208,84 @@ class QRCode:
 
 
 class SNEntry:
-    def __init__(self, comp, syns, char, rgroup, qrstring, sampleid, sdatetime, initials="NA", comments="NA"):
+    def __init__(self, comp, syns, char, qrstring, sampleid, sdatetime, rgroup, initials="NA", history=None):
         self.comp = comp
         self.syns = syns
         self.char = char
-        self.rgroup = rgroup
         self.qrstring = qrstring
         self.sampleid = sampleid
         self.sdatetime = sdatetime
-        self.initials = initials
-        self.comments = comments
+        self.rgroup = input2string(rgroup)
+        self.initials = input2string(initials)
+        self.history = input2string(history)
+        self.history = self.history.replace("/", "->")
+        self.history = self.history.replace("\\", "->")
+        self.history = self.history.replace("_", "->")
 
-        self.foldname = comp.elementstr + "/" + "S" + syns.ID
+        self.foldname = comp.elementstr + "/" + syns.method
         if not os.path.isdir(os.path.join(FILE_PATH, self.foldname)):
             os.makedirs(os.path.join(FILE_PATH, self.foldname))
         files = os.listdir(os.path.join(FILE_PATH, self.foldname))
         self.nfiles = len(files)
-        self.filename = comp.compstr + "_S" + syns.ID + "_C" + char.ID
+        self.filename = comp.compstr + "_" + syns.method + "_" + char.method + "_H" + str(self.history)
 
     @classmethod
     def from_input(cls, upload_files=None):
-        nanosec = time.time_ns()
-        comp = SNComposition.from_input()
-        syns = SNSynthesis.from_input()
-        char = SNCharaterization.from_input()
-        rgroup = SNResearchgroup.from_input()
-        foldname = comp.elementstr + "/" + "S" + syns.ID
-        qrstring = foldname + "_T" + str(nanosec)
-        thisqr = QRCode(qrstring)
-        thisqr.generate_qrcode(foldname)
-        initials = input("Type your name initial: ")
-        initials = initials.strip()
-        initials = initials.replace("|", ",")
-        comments = input("Type comments: ")
-        comments = comments.strip()
-        comments = comments.replace("|", ",")
         sampleid = get_nentries()
         sampleid += 1
         write_nentries(sampleid)
+        print(f"=== Sample ID of this entry is {sampleid} === .")
         sdatetime = str(datetime.datetime.now())
-        thisobj = cls(comp, syns, char, rgroup, qrstring, sampleid, sdatetime, initials=initials, comments=comments)
 
+        comp = SNComposition.from_input()
+        syns = SNSynthesis.from_input()
+        char = SNCharaterization.from_input()
+        foldname = comp.elementstr + "/" + syns.method
+        qrstring = foldname + "_SID" + str(sampleid)
+        thisqr = QRCode(qrstring)
+        thisqr.generate_qrcode(foldname)
+        rgroup = input("Type PIs of research group (eg: firstname1_lastname1 + firstname2_lastname2): ")
+        initials = input("Type your name initial (eg: ZW): ")
+        history = input("Type sample history (eg: SID1003, SID1010): ")
+
+        thisobj = cls(comp, syns, char, qrstring, sampleid, sdatetime, rgroup, initials=initials, history=history)
+        if isinstance(upload_files, list) and len(upload_files) > 0:
+            thisobj.uploading_files(upload_files)
+        return thisobj
+
+    @classmethod
+    def from_history(cls, thisdict, upload_files=None):
+        sampleid = get_nentries()
+        sampleid += 1
+        write_nentries(sampleid)
+        print(f"=== Sample ID of this entry is {sampleid} === .")
+        sdatetime = str(datetime.datetime.now())
+
+        comp = SNComposition.from_history(thisdict["Composition"])
+        syns = SNSynthesis.from_history(thisdict["Synthesis"], thisdict["SynDetails"])
+        char = SNCharaterization.from_history(thisdict["Characterization"], thisdict["CharDetails"])
+        foldname = comp.elementstr + "/" + syns.method
+        qrstring = foldname + "_SID" + str(sampleid)
+        thisqr = QRCode(qrstring)
+        thisqr.generate_qrcode(foldname)
+
+        history = thisdict["History"]
+        print(f"The existing sample history is {history}.")
+        thisbool = input("Want to modify (Y for yes and N for no)?")
+        if thisbool[0].upper() == "Y":
+            thisbool = True
+        else:
+            thisbool = False
+        if thisbool:
+            history = input("Type sample history (eg: SID1003, SID1010): ")
+        rgroup = input("Type PIs of research group (eg: firstname1_lastname1 + firstname2_lastname2): ")
+        initials = input("Type your name initial (eg: ZW): ")
+        thisobj = cls(comp, syns, char, qrstring, sampleid, sdatetime, rgroup, initials=initials, history=history)
+        if isinstance(upload_files, list) and len(upload_files) > 0:
+            thisobj.uploading_files(upload_files)
+        return thisobj
+
+    def uploading_files(self, upload_files):
         if isinstance(upload_files, list) and len(upload_files) > 0:
             for i in range(len(upload_files)):
                 sf = upload_files[i]
@@ -223,12 +294,10 @@ class SNEntry:
                     app = app[-1]
                 else:
                     app = "none"
-                tf = thisobj.filename + "_T" + str(nanosec) + "_F" + str(thisobj.nfiles + 1)
+                tf = self.filename + "_SID" + str(self.sampleid) + "_F" + str(self.nfiles + 1)
                 tf = tf + "." + app
-                shutil.copy(sf, os.path.join(FILE_PATH, thisobj.foldname, tf))
-                thisobj.nfiles += 1
-
-        return thisobj
+                shutil.copy(sf, os.path.join(FILE_PATH, self.foldname, tf))
+                self.nfiles += 1
 
     def to_dict(self):
         thisdict = {}
@@ -240,26 +309,20 @@ class SNEntry:
                 thisdict[key] = self.comp.compstr
             elif key == "Synthesis":
                 thisdict[key] = self.syns.method
-            elif key == "SynParams":
-                tmpstr = json.dumps(self.syns.params)
-                tmpstr = tmpstr.strip()
-                tmpstr = tmpstr.replace("|", ",")
-                thisdict[key] = tmpstr
+            elif key == "SynDetails":
+                thisdict[key] = self.syns.details
             elif key == "Characterization":
                 thisdict[key] = self.char.method
-            elif key == "CharParams":
-                tmpstr = json.dumps(self.char.params)
-                tmpstr = tmpstr.strip()
-                tmpstr = tmpstr.replace("|", ",")
-                thisdict[key] = tmpstr
+            elif key == "CharDetails":
+                thisdict[key] = self.char.details
             elif key == "ResearchGroup":
-                thisdict[key] = self.rgroup.PIs
+                thisdict[key] = self.rgroup
             elif key == "QRcode":
                 thisdict[key] = self.qrstring
             elif key == "Initials":
                 thisdict[key] = self.initials
-            elif key == "Comments":
-                thisdict[key] = self.comments
+            elif key == "History":
+                thisdict[key] = self.history
             elif key == "DateTime":
                 thisdict[key] = self.sdatetime
             elif key == "nFiles":

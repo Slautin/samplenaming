@@ -1,4 +1,5 @@
-import os, sys
+import os
+import sys
 from monty.serialization import loadfn
 
 try:
@@ -12,67 +13,12 @@ FILE_CSV = "SampleNaming.csv"
 FILE_NENTRIES = "entrycounter.txt"
 
 COMP_HEADERS = ["Elements", "Composition"]
-SYN_HEADERS = ["Synthesis", "SynParams"]
-CHAR_HEADERS = ["Characterization", "CharParams"]
-ADD_HEADERS = ["ResearchGroup", "QRcode", "Initials", "Comments"]
+SYN_HEADERS = ["Synthesis", "SynDetails"]
+CHAR_HEADERS = ["Characterization", "CharDetails"]
+ADD_HEADERS = ["ResearchGroup", "QRcode", "Initials", "History"]
 GENERATE_HEADERS = ["DateTime", "nFiles", "SampleFolder", "SampleName", "SampleID"]
 CSV_HEADERS = COMP_HEADERS + SYN_HEADERS + CHAR_HEADERS + ADD_HEADERS + GENERATE_HEADERS
-CSV_HEADERS_SHORT = ["Elements", "Composition", "Synthesis", "Characterization", "Comments", "SampleID"]
+CSV_HEADERS_SHORT = ["Elements", "Composition", "Synthesis", "Characterization", "History", "SampleID"]
 
-Synthesis = {
-    "Casting": {
-        "ID": "A",
-        "Cooling": "Air",
-        "AnnealTemperature": 500.0,
-        "AnnealTime": 180.0,
-    },
-    "Sputter": {
-        "ID": "B",
-        "Substrate": "Si",
-        "Temperature": 1800.0,
-    },
-    "Computation": {
-        "ID": "C",
-        "Method": "CalPHAD",
-    },
-    "Unknown": {
-        "ID": "D",
-    },
-}
-
-Characterization = {
-    "XRD": {
-        "ID": "A",
-    },
-    "SEM": {
-        "ID": "B",
-        "Temperature": 1800.0,
-    },
-    "TEM": {
-        "ID": "C",
-        "Temperature": 1800.0,
-    },
-    "MicroHardness": {
-        "ID": "D",
-        "Substrate": "Si",
-        "Temperature": 1800.0,
-    },
-    "Tensile_Compressive": {
-        "ID": "E",
-        "Method": "Tensile",
-        "StrainRate": 0.0001,
-        "Temperature": 300.0,
-    },
-    "Unknown": {
-        "ID": "E",
-    },
-}
-
-ResearchGroup = {
-    "Haixuan_Xu": {
-        "ID": "A"
-    },
-    "Unknown": {
-        "ID": "A"
-    },
-}
+Synthesis = ["Casting", "Sputter", "Wrought", "Deposition", "Computation", "Others", "Combination", "Unknown"]
+Characterization = ["XRD", "SEM", "TEM", "Metallography", "MicroHardness", "MechanicalTest", "Others", "Combination", "Unknown"]
