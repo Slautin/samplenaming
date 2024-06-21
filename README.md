@@ -53,10 +53,9 @@ upload_files = None
 thissid = 1002
 thissummary.add_an_entry_from_id(thissid, upload_files=upload_files)
 SNSummary.display_entries(thissummary.df, display_style="Full")
-
-## add an entry based on the previous sample in database (from QRcode)
-## thissummary.add_an_entry_from_qrcode(qrstring, upload_files=None)
 ```
+in addition to add_an_entry_from_id, you add an entry based on previous QRcode in database by add_an_entry_from_qrcode(qrstring, upload_files=None).
+
 
 The query.py is to screen entries and save the results
 ```bash
@@ -84,10 +83,8 @@ filename = "SNquery_results.csv"
 thissummary.query_save(filename=filename)
 ```
 
-The querying functions with return of sampleids in SNSummary:
-query_by_ncompons(ncompons, reset_df=False); ncompons: list of number of elements, eg. [3, 4, 5]; reset_df: if False continueous querying, else reset to original df
-query_by_elements(elements, style="INCLUDE", reset_df=False), elements: list, style: "INCLUDE" or "EXCLUDE", 
-query_by(key, values, reset_df=False), key: keyword in SNSummary, values: list of values 
-query_by_key_value_in(key, value, reset_df=False), key: keyword in SNSummary, value: value 
-query_by_qrstring(value), value: qrstring
-query_by_ids(sids), sids: list of sample ids
+the reset_df in functions above is used to turn on/off continueous screening. If False, continueous screening, else reset to dataframe to original dataframe. In addition to query_by_elements() and query_by() functions, list below are available querying functions with return of sampleids in SNSummary:
+1. query_by_ncompons(ncompons, reset_df=False); ncompons: list of number of elements, eg. [3, 4, 5]
+2. query_by_key_value_in(key, value, reset_df=False), key: keyword in SNSummary, value: value string is part of key value of database 
+3. query_by_qrstring(value), value: qrstring
+The query_by_ids(sids), where sids are a list of sample IDs, is querying your results based on sids. No returns. 
