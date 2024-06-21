@@ -29,10 +29,6 @@ If you encounter any problem with unknown modules, just run "pip install modulen
 I have put several Python codes to show how to use it. The main code is located at samplenaming/core/snsummary.py. For those who are familar with Python, you can read the source code for additional functions/methods of the SNSummary object.
 
 The firsttime.py is to generate the folder and files. Only run once after installation.
-```bash
-import samplenaming.core.config as SNconfig
-SNconfig.init_files()
-```
 
 The add_an_entry.py is to add an entry to database. 
 ```bash
@@ -41,14 +37,25 @@ from samplenaming.core.snsummary import SNSummary
 thissummary = SNSummary()
 
 ## add an entry without uploading files
-upload_files = None
-thissummary.add_an_entry(upload_files=upload_files)
-SNSummary.display_entries(thissummary.df, display_style="Full")
+from samplenaming.core.snsummary import SNSummary
+
+thissummary = SNSummary()
+SNSummary.display_entries(thissummary.df, display_style="compact")
 
 ## add an entry with uploading files
-upload_files = ["LICENSE", "MANIFEST.in"]
+upload_files = ["upload1.txt", "upload2.in"]
 thissummary.add_an_entry(upload_files=upload_files)
 SNSummary.display_entries(thissummary.df, display_style="compact")
+
+
+## add an entry based on the previous sample in database (from sample ID)
+upload_files = None
+thissid = 1002
+thissummary.add_an_entry_from_id(thissid, upload_files=upload_files)
+SNSummary.display_entries(thissummary.df, display_style="Full")
+
+## add an entry based on the previous sample in database (from QRcode)
+## thissummary.add_an_entry_from_qrcode(qrstring, upload_files=None)
 ```
 
 The query.py is to screen entries and save the results
