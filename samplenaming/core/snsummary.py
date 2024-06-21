@@ -85,7 +85,11 @@ class SNSummary:
         self.reset_df4query()
 
     def add_an_entry_from_id(self, thisid, upload_files=None):
-        indict = self.df.loc[thisid].to_dict()
+        try:
+            indict = self.df.loc[thisid].to_dict()
+        except:
+            errormsg = f"The sample ID of {thisid} is not existed in database."
+            raise ValueError(errormsg)
         thisentry = SNEntry.from_history(indict, upload_files=upload_files)
         thisdict = thisentry.to_dict()
         SNSummary.to_file(thisdict)
@@ -97,6 +101,9 @@ class SNSummary:
         ys = self.df["QRcode"].to_numpy()
         ids = self.df.index.to_numpy()
         ids = np.compress(ys == value, ids)
+        if len(ids) == 0:
+            errormsg = f"The QRstring of {value} is not existed in database."
+            raise ValueError(errormsg)
         indict = self.df.iloc[ids[0]].to_dict()
         thisentry = SNEntry.from_history(indict, upload_files=upload_files)
         thisdict = thisentry.to_dict()

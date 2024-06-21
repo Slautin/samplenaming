@@ -12,7 +12,7 @@ FILE_PATH = config_vars["FILE_PATH"]
 FILE_CSV = "SampleNaming.csv"
 FILE_NENTRIES = "entrycounter.txt"
 
-COMP_HEADERS = ["Elements", "Composition"]
+COMP_HEADERS = ["Elements", "Composition", "CommonName"]
 SYN_HEADERS = ["Synthesis", "SynDetails"]
 CHAR_HEADERS = ["Characterization", "CharDetails"]
 ADD_HEADERS = ["ResearchGroup", "QRcode", "Initials", "History"]
@@ -20,5 +20,5 @@ GENERATE_HEADERS = ["DateTime", "nFiles", "SampleFolder", "SampleName", "SampleI
 CSV_HEADERS = COMP_HEADERS + SYN_HEADERS + CHAR_HEADERS + ADD_HEADERS + GENERATE_HEADERS
 CSV_HEADERS_SHORT = ["Elements", "Composition", "Synthesis", "Characterization", "History", "SampleID"]
 
-Synthesis = ["Casting", "Sputter", "Wrought", "Deposition", "Computation", "Others", "Combination", "Unknown"]
+Synthesis = ["Casting", "Sputter", "SolidState", "StericEntrapment", "AdditiveMan", "Computation", "Others", "Combination", "Unknown"]
 Characterization = ["XRD", "SEM", "TEM", "Metallography", "MicroHardness", "MechanicalTest", "Others", "Combination", "Unknown"]

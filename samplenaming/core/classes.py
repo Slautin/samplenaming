@@ -11,37 +11,49 @@ from samplenaming.periodictable.composition import Composition
 
 def input2string(instring):
     instring = str(instring)
-    instring = instring.strip()
-    instring = instring.replace("|", ",")
+    if len(instring) == 0:
+        instring = "nan"
+    else:
+        instring = instring.strip()
+        instring = instring.replace("|", ",")
     return instring
 
 
 class SNComposition:
-    def __init__(self, compstr):
+    def __init__(self, compstr, commonname=None):
         comp = Composition(compstr)
         comp = Composition(comp.reduced_formula)
         self.compstr = comp.reduced_formula
         self.elementstr = ""
         for el in comp.elements:
             self.elementstr += el.symbol
+        if commonname is None:
+            commonname = self.compstr
+        elif str(commonname).upper() == "NAN":
+            commonname = self.compstr
+        self.commonname = commonname
 
     @classmethod
     def from_input(cls):
         compstr = input("Type composition (eg: H2O): ")
-        thisobj = cls(compstr)
+        commonname = input("Type common name (eg: TTHZ): ")
+        thisobj = cls(compstr, commonname)
         return thisobj
 
     @classmethod
-    def from_history(cls, compstr):
-        print(f"The existing composition is {compstr}.")
+    def from_history(cls, compstr, commonname):
+        print(f"The existing composition is {compstr} and common name is {commonname}.")
         thisbool = input("Want to modify (Y for yes and N for no)?")
+        thisbool = input2string(thisbool)
         if thisbool[0].upper() == "Y":
             thisbool = True
         else:
             thisbool = False
         if thisbool:
             compstr = input("Type composition (eg: H2O): ")
-        thisobj = cls(compstr)
+            commonname = input("Type common name (eg: TTHZ): ")
+
+        thisobj = cls(compstr, commonname)
         return thisobj
 
     def __str__(self):
@@ -81,6 +93,7 @@ class SNSynthesis:
     def from_history(cls, method, details):
         print(f"The existing method is {method}.")
         thisbool = input("Want to modify (Y for yes and N for no)?")
+        thisbool = input2string(thisbool)
         if thisbool[0].upper() == "Y":
             thisbool = True
         else:
@@ -101,7 +114,8 @@ class SNSynthesis:
         else:
             print(f"The existing details for {method} is {details}.")
             thisbool = input("Want to modify (Y for yes and N for no)?")
-            if thisbool[0].upper() == "Y":
+            thisbool = str(thisbool)
+            if len(thisbool) > 0 and thisbool[0].upper() == "Y":
                 thisbool = True
             else:
                 thisbool = False
@@ -148,6 +162,7 @@ class SNCharaterization:
     def from_history(cls, method, details):
         print(f"The existing method is {method}.")
         thisbool = input("Want to modify (Y for yes and N for no)?")
+        thisbool = input2string(thisbool)
         if thisbool[0].upper() == "Y":
             thisbool = True
         else:
@@ -169,6 +184,7 @@ class SNCharaterization:
         else:
             print(f"The existing details for {method} is {details}.")
             thisbool = input("Want to modify (Y for yes and N for no)?")
+            thisbool = input2string(thisbool)
             if thisbool[0].upper() == "Y":
                 thisbool = True
             else:
@@ -217,17 +233,20 @@ class SNEntry:
         self.sdatetime = sdatetime
         self.rgroup = input2string(rgroup)
         self.initials = input2string(initials)
-        self.history = input2string(history)
-        self.history = self.history.replace("/", "->")
-        self.history = self.history.replace("\\", "->")
-        self.history = self.history.replace("_", "->")
+        if history is None:
+            history = "nan"
+        else:
+            self.history = input2string(history)
+            self.history = self.history.replace("/", "->")
+            self.history = self.history.replace("\\", "->")
+            self.history = self.history.replace("_", "->")
 
         self.foldname = comp.elementstr + "/" + syns.method
         if not os.path.isdir(os.path.join(FILE_PATH, self.foldname)):
             os.makedirs(os.path.join(FILE_PATH, self.foldname))
         files = os.listdir(os.path.join(FILE_PATH, self.foldname))
         self.nfiles = len(files)
-        self.filename = comp.compstr + "_" + syns.method + "_" + char.method + "_H" + str(self.history)
+        self.filename = comp.compstr + "_" + comp.commonname + "_" + syns.method + "_" + char.method + "_H" + str(self.history)
 
     @classmethod
     def from_input(cls, upload_files=None):
@@ -244,9 +263,9 @@ class SNEntry:
         qrstring = foldname + "_SID" + str(sampleid)
         thisqr = QRCode(qrstring)
         thisqr.generate_qrcode(foldname)
-        rgroup = input("Type PIs of research group (eg: firstname1_lastname1 + firstname2_lastname2): ")
+        rgroup = input("Type PIs of research group (eg: first_lastname1 + first_lastname2): ")
         initials = input("Type your name initial (eg: ZW): ")
-        history = input("Type sample history (eg: SID1003, SID1010): ")
+        history = input("Type sample history (eg: 1003, 1010): ")
 
         thisobj = cls(comp, syns, char, qrstring, sampleid, sdatetime, rgroup, initials=initials, history=history)
         if isinstance(upload_files, list) and len(upload_files) > 0:
@@ -261,7 +280,7 @@ class SNEntry:
         print(f"=== Sample ID of this entry is {sampleid} === .")
         sdatetime = str(datetime.datetime.now())
 
-        comp = SNComposition.from_history(thisdict["Composition"])
+        comp = SNComposition.from_history(thisdict["Composition"], thisdict["CommonName"])
         syns = SNSynthesis.from_history(thisdict["Synthesis"], thisdict["SynDetails"])
         char = SNCharaterization.from_history(thisdict["Characterization"], thisdict["CharDetails"])
         foldname = comp.elementstr + "/" + syns.method
@@ -272,13 +291,14 @@ class SNEntry:
         history = thisdict["History"]
         print(f"The existing sample history is {history}.")
         thisbool = input("Want to modify (Y for yes and N for no)?")
+        thisbool = input2string(thisbool)
         if thisbool[0].upper() == "Y":
             thisbool = True
         else:
             thisbool = False
         if thisbool:
             history = input("Type sample history (eg: SID1003, SID1010): ")
-        rgroup = input("Type PIs of research group (eg: firstname1_lastname1 + firstname2_lastname2): ")
+        rgroup = input("Type PIs of research group (eg: first_lastname1 + first_lastname2): ")
         initials = input("Type your name initial (eg: ZW): ")
         thisobj = cls(comp, syns, char, qrstring, sampleid, sdatetime, rgroup, initials=initials, history=history)
         if isinstance(upload_files, list) and len(upload_files) > 0:
@@ -307,6 +327,8 @@ class SNEntry:
                 thisdict[key] = self.comp.elementstr
             elif key == "Composition":
                 thisdict[key] = self.comp.compstr
+            elif key == "CommonName":
+                thisdict[key] = self.comp.commonname
             elif key == "Synthesis":
                 thisdict[key] = self.syns.method
             elif key == "SynDetails":
