@@ -97,8 +97,8 @@ class SNSummary:
         self.nentries = len(self.df)
         self.reset_df4query()
 
-    def add_an_entry_from_qrcode(self, value, upload_files=None):
-        ys = self.df["QRcode"].to_numpy()
+    def add_an_entry_from_qrstring(self, value, upload_files=None):
+        ys = self.df["QRString"].to_numpy()
         ids = self.df.index.to_numpy()
         ids = np.compress(ys == value, ids)
         if len(ids) == 0:

@@ -13,11 +13,9 @@ FILE_CSV = "SampleNaming.csv"
 FILE_NENTRIES = "entrycounter.txt"
 
 COMP_HEADERS = ["Elements", "Composition", "CommonName"]
-SYN_HEADERS = ["Synthesis", "SynDetails"]
-CHAR_HEADERS = ["Characterization", "CharDetails"]
-ADD_HEADERS = ["ResearchGroup", "QRcode", "Initials", "History"]
-GENERATE_HEADERS = ["DateTime", "nFiles", "SampleFolder", "SampleName", "SampleID"]
-CSV_HEADERS = COMP_HEADERS + SYN_HEADERS + CHAR_HEADERS + ADD_HEADERS + GENERATE_HEADERS
+TYPING_HEADERS = ["Synthesis", "SynDetails", "Characterization", "CharDetails", "ResearchGroup",  "Initials", "History"]
+GENERATE_HEADERS = ["QRString", "DateTime", "nFiles", "SampleFolder", "SampleName", "SampleID"]
+CSV_HEADERS = COMP_HEADERS + TYPING_HEADERS + GENERATE_HEADERS
 CSV_HEADERS_SHORT = ["Elements", "Composition", "Synthesis", "Characterization", "History", "SampleID"]
 
 Synthesis = ["Casting", "Sputter", "SolidState", "StericEntrapment", "AdditiveMan", "Computation", "Others", "Combination", "Unknown"]

@@ -91,7 +91,7 @@ class SNSynthesis:
 
     @classmethod
     def from_history(cls, method, details):
-        print(f"The existing method is {method}.")
+        print(f"The existing synthesis method is {method}.")
         thisbool = input("Want to modify (Y for yes and N for no)?")
         thisbool = input2string(thisbool)
         if thisbool[0].upper() == "Y":
@@ -140,7 +140,7 @@ class SNCharaterization:
 
     @classmethod
     def from_input(cls):
-        print("List of synthesis methods: ")
+        print("List of characterization methods: ")
         for i in range(len(Characterization)):
             print(f"{i+1} -- {Characterization[i]}")
 
@@ -160,7 +160,7 @@ class SNCharaterization:
 
     @classmethod
     def from_history(cls, method, details):
-        print(f"The existing method is {method}.")
+        print(f"The existing characterization method is {method}.")
         thisbool = input("Want to modify (Y for yes and N for no)?")
         thisbool = input2string(thisbool)
         if thisbool[0].upper() == "Y":
@@ -168,7 +168,7 @@ class SNCharaterization:
         else:
             thisbool = False
         if thisbool:
-            print("List of synthesis methods: ")
+            print("List of characterization methods: ")
             for i in range(len(Characterization)):
                 print(f"{i + 1} -- {Characterization[i]}")
 
@@ -246,7 +246,8 @@ class SNEntry:
             os.makedirs(os.path.join(FILE_PATH, self.foldname))
         files = os.listdir(os.path.join(FILE_PATH, self.foldname))
         self.nfiles = len(files)
-        self.filename = comp.compstr + "_" + comp.commonname + "_" + syns.method + "_" + char.method + "_H" + str(self.history)
+        self.filename = comp.compstr + "_" + comp.commonname + "_" + syns.method + \
+                        "_" + char.method + "_H" + str(self.history) + "_SID" + str(sampleid)
 
     @classmethod
     def from_input(cls, upload_files=None):
@@ -259,13 +260,14 @@ class SNEntry:
         comp = SNComposition.from_input()
         syns = SNSynthesis.from_input()
         char = SNCharaterization.from_input()
+        rgroup = input("Type PIs of research group (eg: first_lastname1 + first_lastname2): ")
+        initials = input("Type your name initial (eg: ZW): ")
+        history = input("Type sample history (eg: 1003, 1010): ")
+
         foldname = comp.elementstr + "/" + syns.method
         qrstring = foldname + "_SID" + str(sampleid)
         thisqr = QRCode(qrstring)
         thisqr.generate_qrcode(foldname)
-        rgroup = input("Type PIs of research group (eg: first_lastname1 + first_lastname2): ")
-        initials = input("Type your name initial (eg: ZW): ")
-        history = input("Type sample history (eg: 1003, 1010): ")
 
         thisobj = cls(comp, syns, char, qrstring, sampleid, sdatetime, rgroup, initials=initials, history=history)
         if isinstance(upload_files, list) and len(upload_files) > 0:
@@ -283,10 +285,6 @@ class SNEntry:
         comp = SNComposition.from_history(thisdict["Composition"], thisdict["CommonName"])
         syns = SNSynthesis.from_history(thisdict["Synthesis"], thisdict["SynDetails"])
         char = SNCharaterization.from_history(thisdict["Characterization"], thisdict["CharDetails"])
-        foldname = comp.elementstr + "/" + syns.method
-        qrstring = foldname + "_SID" + str(sampleid)
-        thisqr = QRCode(qrstring)
-        thisqr.generate_qrcode(foldname)
 
         history = thisdict["History"]
         print(f"The existing sample history is {history}.")
@@ -297,9 +295,15 @@ class SNEntry:
         else:
             thisbool = False
         if thisbool:
-            history = input("Type sample history (eg: SID1003, SID1010): ")
+            history = input("Type sample history (eg: 1003, 1010): ")
         rgroup = input("Type PIs of research group (eg: first_lastname1 + first_lastname2): ")
         initials = input("Type your name initial (eg: ZW): ")
+
+        foldname = comp.elementstr + "/" + syns.method
+        qrstring = foldname + "_SID" + str(sampleid)
+        thisqr = QRCode(qrstring)
+        thisqr.generate_qrcode(foldname)
+
         thisobj = cls(comp, syns, char, qrstring, sampleid, sdatetime, rgroup, initials=initials, history=history)
         if isinstance(upload_files, list) and len(upload_files) > 0:
             thisobj.uploading_files(upload_files)
@@ -339,12 +343,12 @@ class SNEntry:
                 thisdict[key] = self.char.details
             elif key == "ResearchGroup":
                 thisdict[key] = self.rgroup
-            elif key == "QRcode":
-                thisdict[key] = self.qrstring
             elif key == "Initials":
                 thisdict[key] = self.initials
             elif key == "History":
                 thisdict[key] = self.history
+            elif key == "QRString":
+                thisdict[key] = self.qrstring
             elif key == "DateTime":
                 thisdict[key] = self.sdatetime
             elif key == "nFiles":
