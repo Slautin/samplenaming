@@ -54,7 +54,7 @@ thissid = 1002
 thissummary.add_an_entry_from_id(thissid, upload_files=upload_files)
 SNSummary.display_entries(thissummary.df, display_style="Full")
 ```
-in addition to add_an_entry_from_id, you add an entry based on previous QRcode in database by add_an_entry_from_qrcode(qrstring, upload_files=None).
+in addition to add_an_entry_from_id, you add an entry based on previous qrstring (string for QRcode) in database by add_an_entry_from_qrcode(qrstring, upload_files=None).
 
 
 
@@ -89,4 +89,4 @@ the reset_df in functions above is used to turn on/off continueous screening. If
 2. query_by_key_value_in(key, value, reset_df=False), key: keyword in SNSummary, value: value string is part of key value of database 
 3. query_by_qrstring(value), value: qrstring
 
-The query_by_ids(sids), where sids are a list of sample IDs, is querying your results based on sids. No returns. 
+The query_by_ids(sids), where sids are a list of sample IDs, is querying your results based on sample id. No returns. 
