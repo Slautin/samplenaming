@@ -26,7 +26,7 @@ If you encounter any problem with unknown modules, just run "pip install modulen
 
 ## Usage/Examples
 
-I have put several Python codes to show how to use it. The main code is located at samplenaming/core/snsummary.py. For those who are familar with Python, you can read the source code for additional functions/methods of the SNSummary object.
+I have put several Python codes in the "examples" folder to show how to use it. The main code is located at samplenaming/core/snsummary.py. For those who are familar with Python, you can read the source code for additional functions/methods of the SNSummary object.
 
 The firsttime.py is to generate the folder and files. Only run once after installation.
 
