@@ -5,17 +5,19 @@ thissummary = SNSummary()
 SNSummary.display_entries(thissummary.df, display_style="compact")
 
 print("========== After first screening ============")
-ids = thissummary.query_by_key_value_in("History", 1002, reset_df=False)
+ids = thissummary.query_by_key_value_in("History", 1001, reset_df=False)
 thissummary.query_display(display_style="Query")
 
 print("========== Contineous screening ============")
 ids = thissummary.query_by("Characterization", ["XRD", "SEM"], reset_df=False)
 thissummary.query_display(display_style="Query")
 
-#elements = ["Er", "Y"]
-#style = "INCLUDE" #option: "EXCLUDE", "EXACT"
+print("========== reset screening ============")
+elements = ["H", "O"]
+style = "INCLUDE" #option: "EXCLUDE", "EXACT"
+ids = thissummary.query_by_elements(elements, style=style, reset_df=True)
 
-### save to file #####
+print("========== save to file ============")
 filename = "SNquery_results.csv"
 thissummary.query_save(filename=filename)
 
