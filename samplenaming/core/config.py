@@ -10,7 +10,7 @@ def init_files():
 
     if not os.path.isfile(os.path.join(FILE_PATH, FILE_CSV)):
         thisdf = pd.DataFrame(columns=CSV_HEADERS)
-        thisdf = thisdf.rename_axis("SID")
+        thisdf = thisdf.rename_axis("EID")
         thisdf.to_csv(os.path.join(FILE_PATH, FILE_CSV), sep="|", index=True)
 
     if not os.path.isfile(os.path.join(FILE_PATH,  FILE_NENTRIES)):

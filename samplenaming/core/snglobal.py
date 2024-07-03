@@ -13,10 +13,18 @@ FILE_CSV = "SampleNaming.csv"
 FILE_NENTRIES = "entrycounter.txt"
 
 COMP_HEADERS = ["Elements", "Composition", "CommonName"]
-TYPING_HEADERS = ["Synthesis", "SynDetails", "Characterization", "CharDetails", "ResearchGroup",  "Initials", "History"]
-GENERATE_HEADERS = ["QRString", "DateTime", "nFiles", "SampleFolder", "SampleName", "SampleID"]
+TYPING_HEADERS = ["Synthesis", "SynDetails", "Characterization", "CharDetails",
+                  "RadiationDetails", "ResearchGroup",  "YourName", "PaperLink", "Comments"]
+GENERATE_HEADERS = ["QRString", "DateTime", "nFiles", "FileFolder", "FileHeader", "FileLinks", "FirstEntryID", "EntryID", "History"]
 CSV_HEADERS = COMP_HEADERS + TYPING_HEADERS + GENERATE_HEADERS
-CSV_HEADERS_SHORT = ["Elements", "Composition", "Synthesis", "Characterization", "History", "SampleID"]
+CSV_HEADERS_SHORT = ["Elements", "Composition", "Synthesis", "Characterization", "History", "EntryID"]
+CSV_HEADERS_QUERY = ["Elements", "Composition", "Synthesis", "Characterization", "History", "EntryID",
+                     "FirstEntryID", "FileLinks"]
+
+CSV_HEADERS_SAME = ["Elements", "Composition", "CommonName", "Synthesis", "SynDetails", "Characterization", "CharDetails",
+                  "RadiationDetails", "Comments"]
+CSV_HEADERS_MERGE = ["ResearchGroup",  "YourName", "PaperLink"]
+CSV_HEADERS_UPDATE = ["DateTime",  "nFiles"]
 
 Synthesis = ["Casting", "Sputter", "SolidState", "StericEntrapment", "AdditiveMan", "Computation", "Others", "Combination", "Unknown"]
 Characterization = ["XRD", "SEM", "TEM", "Metallography", "MicroHardness", "MechanicalTest", "Others", "Combination", "Unknown"]
