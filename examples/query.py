@@ -5,25 +5,22 @@ thissummary = SNSummary()
 SNSummary.display_entries(thissummary.df, display_style="compact")
 
 print("========== After first screening ============")
-elements = ["H"]
-style = "INCLUDE" #option: "EXCLUDE"
-ids = thissummary.query_by_elements(elements, style=style, reset_df=False)
-#thissummary.query_display(display_style="compact")
-print(thissummary.df4query)
+ids = thissummary.query_by_key_value_in("History", 1002, reset_df=False)
+thissummary.query_display(display_style="Query")
 
-print("========== Continueous screening ============")
-key = "Elements"
-thisvalue = ["HO"]
-ids = thissummary.query_by(key, thisvalue)
-display_cols = ["Composition", "Synthesize", "SynDetails", "QRcode",  "History", "SampleID"]
-#thissummary.query_display(display_style=display_cols)
-print(thissummary.df4query)
+print("========== Contineous screening ============")
+ids = thissummary.query_by("Characterization", ["XRD", "SEM"], reset_df=False)
+thissummary.query_display(display_style="Query")
+
+#elements = ["Er", "Y"]
+#style = "INCLUDE" #option: "EXCLUDE", "EXACT"
 
 ### save to file #####
 filename = "SNquery_results.csv"
 thissummary.query_save(filename=filename)
 
 
+'''
 listfunc = dir(thissummary)
 funcs = []
 for func in listfunc:
@@ -40,3 +37,4 @@ print(CSV_HEADERS)
 print("===========")
 print("short list of keys for 'compact' display")
 print(CSV_HEADERS_SHORT)
+'''
