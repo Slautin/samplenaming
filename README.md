@@ -70,26 +70,28 @@ thissummary = SNSummary()
 SNSummary.display_entries(thissummary.df, display_style="compact")
 
 print("========== After first screening ============")
-elements = ["H"]
-style = "INCLUDE" #option: "EXCLUDE"
-ids = thissummary.query_by_elements(elements, style=style, reset_df=False)
-thissummary.query_display(display_style="compact")
+ids = thissummary.query_by_key_value_in("History", 1001, reset_df=False)
+thissummary.query_display(display_style="Query")
 
-print("========== Continueous screening ============")
-key = "Elements"
-thisvalue = ["HO"]
-ids = thissummary.query_by(key, thisvalue)
-display_cols = ["Composition", "Synthesize", "Syn_params", "QRcode"]
-thissummary.query_display(display_style=display_cols)
+print("========== Contineous screening ============")
+ids = thissummary.query_by("Characterization", ["XRD", "SEM"], reset_df=False)
+thissummary.query_display(display_style="Query")
 
-### save to file #####
+print("========== reset screening ============")
+elements = ["H", "O"]
+style = "INCLUDE" #option: "EXCLUDE", "EXACT"
+ids = thissummary.query_by_elements(elements, style=style, reset_df=True)
+
+print("========== save to file ============")
 filename = "SNquery_results.csv"
 thissummary.query_save(filename=filename)
 ```
 
-The reset_df in functions above is used to turn on/off continueous screening. If False, continueous screening, else reset to dataframe to original dataframe. In addition to query_by_elements() and query_by() functions, list below are available querying functions in SNSummary:
-1. query_by_ncompons(ncompons, reset_df=False); ncompons: list of number of elements, eg. [3, 4, 5]
-2. query_by_key_value_in(key, value, reset_df=False), key: keyword in SNSummary, value: value string is part of key value of database 
-3. query_by_qrstring(value), value: qrstring
-4. query_by_ids(eids), where eids are a list of entry IDs
+The reset_df in functions above is used to turn on/off continueous screening. If False, continueous screening, else reset to dataframe to original dataframe. List below are available querying functions in SNSummary:
+1. query_by_key_value_in(key, value, reset_df=False), key: keyword in SNSummary, value: value string is part of key value of database
+2. query_by(key, values, reset_df=False), key: keyword in SNSummary, values: list of values
+3. query_by_elements(elements, style="Include", reset_df=True), elements: list of elements, style: "Include", "Exclude" or "Exact"
+4. query_by_ncompons(ncompons, reset_df=False); ncompons: list of number of elements, eg. [3, 4, 5]
+5. query_by_qrstring(value), value: qrstring
+6. query_by_ids(eids), where eids are a list of entry IDs
 All of functions return a list of entry ids. 
