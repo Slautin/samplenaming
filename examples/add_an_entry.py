@@ -15,6 +15,6 @@ thissummary.add_an_entry_from_id(thissid, upload_files=upload_files)
 SNSummary.display_entries(thissummary.df, display_style="Full")
 
 upload_files = ["upload1.txt", "upload2.in"]
-thissid = 1003
-thissummary.add_an_entry_from_id(thissid, upload_files=upload_files)
+thisid = 1003
+thissummary.add_an_entry_from_id(thisid, upload_files=upload_files)
 SNSummary.display_entries(thissummary.df, display_style="Full")
