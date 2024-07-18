@@ -7,7 +7,7 @@ import shutil
 
 from samplenaming.core.snglobal import FILE_PATH, FILE_CSV
 from samplenaming.core.snglobal import CSV_HEADERS, CSV_HEADERS_SHORT, CSV_HEADERS_QUERY
-from samplenaming.core.snglobal import CSV_HEADERS_SAME, CSV_HEADERS_MERGE, CSV_HEADERS_UPDATE
+from samplenaming.core.snglobal import CSV_HEADERS_SAME, CSV_HEADERS_MERGE, CSV_HEADERS_UPDATE, NANSTRINGS
 from samplenaming.core.classes import SNEntry
 from samplenaming.periodictable.composition import Composition
 
@@ -23,7 +23,7 @@ def ismerge_twodicts(firstdict, seconddict):
 
 def merge_twodicts(firstdict, seconddict):
     for key in CSV_HEADERS_MERGE:
-        if len(firstdict[key]) == 0 or firstdict[key].upper() == "NAN" or firstdict[key].upper() == "NA":
+        if len(firstdict[key]) == 0 or firstdict[key].upper() in NANSTRINGS:
             firstdict[key] = seconddict[key]
         else:
             firstdict[key] += "," + str(seconddict[key])
@@ -33,9 +33,9 @@ def merge_twodicts(firstdict, seconddict):
         elif key == "nFiles":
             foldname = seconddict["FileFolder"]
             oldfheader = seconddict["FileHeader"]
-            fheader = firstdict["Composition"] + "_" + firstdict["CommonName"] + \
-                        "_" + firstdict["Synthesis"] + "_" + firstdict["Characterization"] + \
-                        "_EID" + str(firstdict["EntryID"])
+            fheader = (firstdict["CommonName"] + "_"
+                       + firstdict["Synthesis"] + "_" + firstdict["Characterization"] +
+                        "_EID" + str(firstdict["EntryID"]))
             nfiles = firstdict[key]
             filelinks = firstdict["FileLinks"]
             files = os.listdir(os.path.join(FILE_PATH, foldname))

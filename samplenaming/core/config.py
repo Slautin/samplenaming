@@ -4,28 +4,29 @@ from samplenaming.core.snglobal import FILE_PATH, FILE_CSV, FILE_NENTRIES
 from samplenaming.core.snglobal import CSV_HEADERS
 
 
-def init_files():
+def init_files(force2init=False):
     if not os.path.isdir(FILE_PATH):
         os.makedirs(FILE_PATH)
+    if force2init:
+        thisinit = True
+    else:
+        if not os.path.isfile(os.path.join(FILE_PATH, FILE_CSV)):
+            thisinit = True
+        else:
+            thisinit = False
 
-    if not os.path.isfile(os.path.join(FILE_PATH, FILE_CSV)):
+    if thisinit:
         thisdf = pd.DataFrame(columns=CSV_HEADERS)
         thisdf = thisdf.rename_axis("EID")
         thisdf.to_csv(os.path.join(FILE_PATH, FILE_CSV), sep="|", index=True)
-
-    if not os.path.isfile(os.path.join(FILE_PATH,  FILE_NENTRIES)):
+    if force2init:
+        thisinit = True
+    else:
+        if not os.path.isfile(os.path.join(FILE_PATH,  FILE_NENTRIES)):
+            thisinit = True
+        else:
+            thisinit = False
+    if thisinit:
         nentries = 1000
         with open(os.path.join(FILE_PATH, FILE_NENTRIES), "w") as f:
             f.write(str(nentries))
-
-
-def get_nentries():
-    with open(os.path.join(FILE_PATH, FILE_NENTRIES), "r") as f:
-        line = f.readline()
-        nentries = int(line)
-    return nentries
-
-
-def write_nentries(nentries):
-    with open(os.path.join(FILE_PATH, FILE_NENTRIES), "w") as f:
-        f.write(str(nentries))
