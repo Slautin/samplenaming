@@ -1,6 +1,7 @@
 import os
 import qrcode
 import shutil
+import numpy as np
 #import time
 import datetime
 from samplenaming.core.snglobal import Synthesis, Characterization
@@ -57,13 +58,74 @@ def merge_two_strings(old, new, thres=0):
             out = old + "," + new
     return out
 
+class PrettyFormula:
+    def __init__(self, compstr, significant_figure=6):
+        self.compstr = compstr
+        self.significant_figure = significant_figure
+        self.multiplier = np.power(10.0, self.significant_figure - 1)
+        self.pretty_formula = self.get_pretty_formula()
+    @staticmethod
+    def extract_paratheses(s):
+        matches = []
+        start = 0
+        end = 0
+        while True:
+            relative_s = s[start:].find("(")
+            relative_e = s[end:].find(")")
+            if relative_s == -1 or relative_e == -1:
+                break
+            matches.append(s[start + relative_s + 1:end + relative_e])
+            start += 1 + relative_s
+            end += 1 + relative_e
+        return matches
+
+    def compstr2frac_formula(self, instr):
+        comp = Composition(instr)
+        newstr = ""
+        for iele in range(len(comp.elements)):
+            el = comp.elements[iele]
+            sym = el.symbol
+            frac = comp.get_atomic_fraction(el)
+            frac = round(frac, self.significant_figure)
+            newstr += sym + str(frac)
+        return newstr
+    def normalize_composition(self):
+        matches = PrettyFormula.extract_paratheses(self.compstr)
+        if len(matches) == 0:
+            outstr = PrettyFormula.compstr2frac_formula(self.compstr)
+        else:
+            outstr = self.compstr
+            for i in range(len(matches)):
+                c = matches[i]
+                newc = PrettyFormula.compstr2frac_formula(c)
+                outstr = outstr.replace(c, newc)
+        return outstr
+    def get_pretty_formula(self):
+        outstr = self.normalize_composition()
+        comp = Composition(outstr)
+        newstr = ""
+        for iele in range(len(comp.elements)):
+            el = comp.elements[iele]
+            sym = el.symbol
+            pct = comp.get_atomic_fraction(el)
+            pct = int(pct)
+            newstr += sym + str(pct)
+        comp = Composition(newstr)
+        pretty_formula = comp.reduced_formula
+        return pretty_formula
+
+    def __str__(self):
+        return f"The input compostionstr: {self.compstr} pretty_formula: {self.pretty_formula}."
+
+    def __repr__(self):
+        return self.__str__()
 
 class SNComposition:
     def __init__(self, compstr, commonname=None):
         compstr = input2string(compstr, to_empty=False)
-        comp = Composition(compstr)
-        comp = Composition(comp.reduced_formula)
-        self.compstr = comp.reduced_formula
+        thisPF = PrettyFormula(compstr)
+        self.compstr = thisPF.pretty_formula
+        comp = Composition(self.compstr)
         self.elementstr = ""
         for el in comp.elements:
             self.elementstr += el.symbol
