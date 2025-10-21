@@ -58,12 +58,14 @@ def merge_two_strings(old, new, thres=0):
             out = old + "," + new
     return out
 
+
 class PrettyFormula:
     def __init__(self, compstr, significant_figure=6):
         self.compstr = compstr
         self.significant_figure = significant_figure
         self.multiplier = np.power(10.0, self.significant_figure - 1)
         self.pretty_formula = self.get_pretty_formula()
+
     @staticmethod
     def extract_paratheses(s):
         matches = []
@@ -89,17 +91,19 @@ class PrettyFormula:
             frac = round(frac, self.significant_figure)
             newstr += sym + str(frac)
         return newstr
+
     def normalize_composition(self):
         matches = PrettyFormula.extract_paratheses(self.compstr)
         if len(matches) == 0:
-            outstr = PrettyFormula.compstr2frac_formula(self.compstr)
+            outstr = self.compstr2frac_formula(self.compstr)
         else:
             outstr = self.compstr
             for i in range(len(matches)):
                 c = matches[i]
-                newc = PrettyFormula.compstr2frac_formula(c)
+                newc = self.compstr2frac_formula(c)
                 outstr = outstr.replace(c, newc)
         return outstr
+
     def get_pretty_formula(self):
         outstr = self.normalize_composition()
         comp = Composition(outstr)
@@ -119,6 +123,7 @@ class PrettyFormula:
 
     def __repr__(self):
         return self.__str__()
+
 
 class SNComposition:
     def __init__(self, compstr, commonname=None):
@@ -275,6 +280,7 @@ class SNCharaterization:
     def __repr__(self):
         return self.__str__()
 
+
 class SampleIntegrity:
     def __init__(self, iusage, icreate):
         self.iusage = iusage
@@ -361,7 +367,7 @@ class SNRadiation:
             icreate = 0
         else:
             icreate = 1
-        if isinstance(previous_radiation,SNRadiation):
+        if isinstance(previous_radiation, SNRadiation):
             radiation = merge_two_strings(previous_radiation.details, radiation)
         else:
             radiation = merge_two_strings(previous_radiation, radiation)
