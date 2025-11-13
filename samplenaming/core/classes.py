@@ -112,7 +112,7 @@ class PrettyFormula:
             el = comp.elements[iele]
             sym = el.symbol
             pct = comp.get_atomic_fraction(el)
-            pct = int(pct)
+            pct = float(pct)
             newstr += sym + str(pct)
         comp = Composition(newstr)
         pretty_formula = comp.reduced_formula
