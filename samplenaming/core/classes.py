@@ -60,7 +60,7 @@ def merge_two_strings(old, new, thres=0):
 
 
 class PrettyFormula:
-    def __init__(self, compstr, significant_figure=6):
+    def __init__(self, compstr, significant_figure=3):
         self.compstr = compstr
         self.significant_figure = significant_figure
         self.multiplier = np.power(10.0, self.significant_figure - 1)

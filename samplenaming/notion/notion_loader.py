@@ -2,9 +2,9 @@ from notion_client import Client
 import os
 import json
 from datetime import datetime, timezone
-from samplenaming.core.snglobal import CSV_HEADERS
-from samplenaming.core.classes import SNComposition
-from samplenaming.periodictable.composition import Composition
+from core.snglobal import CSV_HEADERS
+from core.classes import SNComposition
+from periodictable.composition import Composition
 #from samplenaming.core.summary import SNSummary
 
 class NotionLoader:
@@ -15,34 +15,9 @@ class NotionLoader:
         self.compositions = None
         self.samples = None
 
-    # def upload_compositions(self, database_id):
-    #     self.original_compositions = self._query_database(database_id)
-    #     self.compositions = {}
-    #
-    #     for entry in self.original_compositions:
-    #         id = entry['id']
-    #         name = self._get_text(entry, 'Name')
-    #         comment = self._get_text(entry, 'Brief description')
-    #         samples = self._get_relation_id(entry['properties']['🧫 Samples'])
-    #         self.compositions[id] = {
-    #             'name': name,
-    #             'comment': comment,
-    #             'samples': samples,
-    #             'created_by': entry['created_by']['id'],
-    #             'created_time': entry['created_time'],
-    #             'last_edited_by': entry['last_edited_by']['id'],
-    #             'samples': samples
-    #         }
 
     def upload_samples(self, database_id, update=True):
-        """
-        Uploads samples from the Notion database into self.samples.
-        Updated for the new schema where:
-          - '🧪Composition' (relation) → replaced by 'Composition' (rich_text)
-          - '📊 Other Results' → replaced by 'Results'
-          - '🧪Composition_old' kept for backward compatibility
-          - Added 'Photos' (files) field
-        """
+
         if update:
             self.original_samples = self.query_updated_pages(database_id)
         else:
@@ -58,59 +33,79 @@ class NotionLoader:
         id = entry["id"]
         name = self._get_text(entry, "Name")
 
-        # Updated field names
         status = (
             (props.get("Status", {}).get("select") or {}).get("name", "")
         )
 
-        # Composition now as rich_text (fallback to old relation)
-        composition = self._get_text(entry, "Composition")
+        sample_type = (
+            (props.get("Sample type", {}).get("select") or {}).get("name", "")
+        )
+
+
+        if sample_type == "Sub-Sample":
+            #parent sample
+            parent_sample = self._get_relation_id(props.get("Parent Sample", {}))[0]
+            #composition from parent
+            _parent_page = self.notion.pages.retrieve(parent_sample)
+            composition = self._get_text(_parent_page, "Composition")
+
+        else:
+            composition = self._get_text(entry, "Composition")
+            parent_sample = ""
+
         a = SNComposition(composition)
         comp = Composition(a.compstr)
-        elements = [e.symbol for e in comp.elements]
-        if composition != a.compstr:
+        try:
+            a = SNComposition(composition)
+            comp = Composition(a.compstr)
+            elements = [e.symbol for e in comp.elements]
             self._post_composition(id, a.compstr, elements)
+        except:
+            print('Composition is incorrect')
 
-        comment = self._get_text(entry, 'Brief description')
-        synthesis = self._get_multiselect(props.get("Synthesis", {}))
-        sample_type = self._get_multiselect(props.get("Sample type", {}))
-        processing = self._get_multiselect(props.get("Processing", {}))
-        if 'Radiation' in processing:
-            radiation = True
-        else:
-            radiation = False
+        # comment = self._get_text(entry, 'Brief description')
+        # synthesis = self._get_multiselect(props.get("Synthesis", {}))
+        # sample_type = self._get_multiselect(props.get("Sample type", {}))
+        # processing = self._get_multiselect(props.get("Processing", {}))
+        # if 'Radiation' in processing:
+        #     radiation = True
+        # else:
+        #     radiation = False
 
-        parent_sample = self._get_relation_id(props.get("🧫 Parent Sample", {}))
-        parent_sample = parent_sample[0] if parent_sample else ""
+        # parent_sample = self._get_relation_id(props.get("🧫 Parent Sample", {}))
+        # parent_sample = parent_sample[0] if parent_sample else ""
 
-        history = [id, ]
+        # history = [id, ]
 
-        if parent_sample != "":
-            history.extend(self._get_sample_history(parent_sample))
+        # if parent_sample != "":
+        #     history.extend(self._get_sample_history(parent_sample))
 
-        assigned_to = self._get_people_id_email(props.get("Assigned To", {}))
-        # datasets = self._get_relation_id(props.get("🗂️ Datasets", {}))
-        sub_samples = self._get_relation_id(props.get("Sub-samples", {}))
-        sources = self._get_relation_id(props.get("👥 Source", {}))
-        results = self._get_relation_id(props.get("Results", {}))
-        location = self._get_text(entry, "Location")
-
+        # assigned_to = self._get_people_id_email(props.get("Assigned To", {}))
+        # sub_samples = self._get_relation_id(props.get("Sub-samples", {}))
+        # sources = self._get_relation_id(props.get("👥 Source", {}))
+        # results = self._get_relation_id(props.get("Results", {}))
+        # location = self._get_text(entry, "Location")
+        #return composition
         return {
             "EntryID": id,
-            "Elements": elements,
-            "CommonName": name,
-            "Composition": a.compstr,
-            "Synthesis": synthesis,
-            "Radiation": radiation,
-            "NearestSampleID": parent_sample,
-            "iCreated": entry["created_by"]["id"],
-            "DateTime": entry["last_edited_time"],
-            "iUsage": assigned_to,
-            "YourName": entry["last_edited_by"]["id"],
-            "ResearchGroup": sources,
-            "SynDetails": comment,
-            "History": history,
-            "FirstSampleID": history[-1]
+            "Sample type": sample_type,
+            "Composition": composition,
+            "Status": status,
+            "Parent Sample": parent_sample,
+            # "Elements": elements,
+            # "CommonName": name,
+            # "Composition": a.compstr,
+            # "Synthesis": synthesis,
+            # "Radiation": radiation,
+            # "NearestSampleID": parent_sample,
+            # "iCreated": entry["created_by"]["id"],
+            # "DateTime": entry["last_edited_time"],
+            # "iUsage": assigned_to,
+            # "YourName": entry["last_edited_by"]["id"],
+            # "ResearchGroup": sources,
+            # "SynDetails": comment,
+            # "History": history,
+            # "FirstSampleID": history[-1]
 
             # "datasets": datasets,
             # "created_time": entry["created_time"],
