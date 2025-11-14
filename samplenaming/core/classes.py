@@ -386,6 +386,20 @@ class QRCode:
         qrstring = input2string(qrstring)
         self.qrstring = qrstring
 
+    def generate_qrimage(self, ):
+        #fn_list = file_name.split(".")
+        #fn = fn_list[-2] + + "_QR.png"
+        img = qrcode.make(self.qrstring)
+        return img
+    
+    def save_qr(self, img, folder, filename):
+        if not os.path.isdir(folder):
+            os.makedirs(folder)
+        img.save(os.path.join(folder, filename))
+
+
+
+
     def generate_qrcode(self, foldname):
         filename = self.qrstring.split("_")
         filename = filename[-1]

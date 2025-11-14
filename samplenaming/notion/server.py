@@ -1,26 +1,25 @@
 from flask import Flask, request, jsonify
 
-from notion_client import Client
-from notion_loader import NotionLoader
-from core.classes import SNComposition, PrettyFormula
+from samplenaming.notion.notion_loader import NotionLoader
+from dotenv import load_dotenv
+import os
 
-a = SNComposition('BaTiO3') 
-b = PrettyFormula('BaTiO3')
-print(a.compstr, b)
+load_dotenv()
 
 #database adresses
-compositions_id = "2866e75c45cb80008c31ff983263ec54"
-samples_id = "2866e75c45cb804884f1c0d76d555431"
-datasets_id = "2331cf7faaeb4aed9e02630ad4374f83"
-notebooks_id = "9bafd0ac9a3b4068a2fcca73bdc6c664"
-results_id = "37d1952c479d4ebc9122d4b4b2dcf707"
-people_id = "8e779a7364db43ec9935d78d7130c288"
+compositions_id = os.getenv("COMPOSITIONS_ID")
+samples_id      = os.getenv("SAMPLES_ID")
+datasets_id     = os.getenv("DATASETS_ID")
+notebooks_id    = os.getenv("NOTEBOOKS_ID")
+results_id      = os.getenv("RESULTS_ID")
+people_id       = os.getenv("PEOPLE_ID")
 
 #token
-token=""
+token=os.getenv("NOTION_TOKEN")
+print(token)
+folder_pass = os.getenv("FILE_DIR")
 
 loader = NotionLoader(token)
-
 
 
 app = Flask(__name__)
@@ -29,11 +28,16 @@ app = Flask(__name__)
 def webhook():
     data = request.get_json(silent=True)
     res_dict = loader.get_data_from_sample_entry(data['data'])
-    print(res_dict)
+    #print(res_dict)
 
-    #print(data['data'])
+    return jsonify({"status": "ok"}), 200
 
-    #print("📩 Received webhook data:", data)
+@app.route("/webhook_res", methods=["POST"])
+def webhook_res():
+    data = request.get_json(silent=True)
+    res_dict = loader.get_data_from_result_entry(data['data'])
+    #print(res_dict)
+
     return jsonify({"status": "ok"}), 200
 
 

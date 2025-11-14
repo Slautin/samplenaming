@@ -2,10 +2,16 @@ from notion_client import Client
 import os
 import json
 from datetime import datetime, timezone
-from core.snglobal import CSV_HEADERS
-from core.classes import SNComposition
-from periodictable.composition import Composition
-#from samplenaming.core.summary import SNSummary
+from samplenaming.core.snglobal import CSV_HEADERS
+from samplenaming.core.classes import SNComposition, QRCode
+from samplenaming.notion.aux import upload_qr
+from samplenaming.periodictable.composition import Composition
+
+from dotenv import load_dotenv
+import requests
+
+load_dotenv()  # reads .env file
+folder = os.getenv("FILE_DIR")
 
 class NotionLoader:
     def __init__(self, token = None):
@@ -15,7 +21,8 @@ class NotionLoader:
         self.compositions = None
         self.samples = None
 
-
+        self.token = token
+    
     def upload_samples(self, database_id, update=True):
 
         if update:
@@ -41,20 +48,19 @@ class NotionLoader:
             (props.get("Sample type", {}).get("select") or {}).get("name", "")
         )
 
+        history = [id, ]
 
         if sample_type == "Sub-Sample":
-            #parent sample
             parent_sample = self._get_relation_id(props.get("Parent Sample", {}))[0]
-            #composition from parent
             _parent_page = self.notion.pages.retrieve(parent_sample)
             composition = self._get_text(_parent_page, "Composition")
+
+            history.extend(self._get_sample_history(parent_sample))
 
         else:
             composition = self._get_text(entry, "Composition")
             parent_sample = ""
 
-        a = SNComposition(composition)
-        comp = Composition(a.compstr)
         try:
             a = SNComposition(composition)
             comp = Composition(a.compstr)
@@ -62,58 +68,59 @@ class NotionLoader:
             self._post_composition(id, a.compstr, elements)
         except:
             print('Composition is incorrect')
+        
+        proc_details = self._get_text(entry, 'Processing Details')
+        location = self._get_text(entry, 'Location')
+        synthesis = self._get_multiselect(props.get("Synthesis", {}))
+        synth_details = self._get_text(entry, 'Synthesis Details')
+        processing = self._get_multiselect(props.get("Processing", {}))
+        
 
-        # comment = self._get_text(entry, 'Brief description')
-        # synthesis = self._get_multiselect(props.get("Synthesis", {}))
-        # sample_type = self._get_multiselect(props.get("Sample type", {}))
-        # processing = self._get_multiselect(props.get("Processing", {}))
-        # if 'Radiation' in processing:
-        #     radiation = True
-        # else:
-        #     radiation = False
+        if 'Radiation' in processing:
+            radiation = True
+        else:
+            radiation = False
 
-        # parent_sample = self._get_relation_id(props.get("🧫 Parent Sample", {}))
-        # parent_sample = parent_sample[0] if parent_sample else ""
+        sources = self._get_relation_id(props.get("Source", {}))
+        assigned_to = self._get_people_id_email(props.get("Assigned To", {}))
 
-        # history = [id, ]
+        #upload_qrcode
+        qr_ = QRCode(entry['url'])
+        img = qr_.generate_qrimage()
+        qr_name = name+"_qr.png"
+        upload_qr(img, id, self.token, qr_name)
 
-        # if parent_sample != "":
-        #     history.extend(self._get_sample_history(parent_sample))
+        file_dir = os.path.join(folder,
+                                        composition.replace("/", "_"),
+                                        name.replace("/", "_")
+                                        )
 
-        # assigned_to = self._get_people_id_email(props.get("Assigned To", {}))
-        # sub_samples = self._get_relation_id(props.get("Sub-samples", {}))
-        # sources = self._get_relation_id(props.get("👥 Source", {}))
-        # results = self._get_relation_id(props.get("Results", {}))
-        # location = self._get_text(entry, "Location")
-        #return composition
+        qr_.save_qr(img, file_dir, qr_name)
+
+
         return {
             "EntryID": id,
-            "Sample type": sample_type,
+            "CommonName": name,
             "Composition": composition,
+            "Elements": elements,
             "Status": status,
-            "Parent Sample": parent_sample,
-            # "Elements": elements,
-            # "CommonName": name,
-            # "Composition": a.compstr,
-            # "Synthesis": synthesis,
-            # "Radiation": radiation,
-            # "NearestSampleID": parent_sample,
-            # "iCreated": entry["created_by"]["id"],
-            # "DateTime": entry["last_edited_time"],
-            # "iUsage": assigned_to,
-            # "YourName": entry["last_edited_by"]["id"],
-            # "ResearchGroup": sources,
-            # "SynDetails": comment,
-            # "History": history,
-            # "FirstSampleID": history[-1]
 
-            # "datasets": datasets,
-            # "created_time": entry["created_time"],
-            # "sub_samples": sub_samples,
-            # "location": location,
-            # "results": results,
-            # "sources": sources,
-            # "photos": photos,
+            "Synthesis": synthesis,
+            "SynDetails": synth_details,
+            "Processing": processing,
+            "ProcDetails": proc_details,
+            "Radiation": radiation,
+            "Location": location,
+
+            "iCreated": entry["created_by"]["id"],
+            "iUsage": assigned_to,
+            "YourName": entry["last_edited_by"]["id"],
+            "DateTime": entry["last_edited_time"],
+            "ResearchGroup": sources,
+
+            "NearestSampleID": parent_sample,
+            "History": history,
+            "FirstSampleID": history[-1]
         }
 
     def upload_results(self, database_id, update=True):
@@ -125,68 +132,103 @@ class NotionLoader:
 
         self.results = {}
         for entry in self.original_results:
-            props = entry.get("properties", {})
-            id = entry['id']
-            name = self._get_text(entry, 'Name')
+            res_dict = self.get_data_from_result_entry(entry)
+            self.results[res_dict["EntryID"]] = res_dict
 
-            # Handle 'Type' select property
-            type_ = (
-                (entry.get("properties", {})
-                 .get("Data Type", {})
-                 .get("select") or {})
-                .get("name", "")
-            )
+    def get_data_from_result_entry(self, entry):
+        props = entry.get("properties", {})
+        
+        id = entry['id']
+        name = self._get_text(entry, 'Name')
 
-            # Link field (may be None)
-            link = (
-                entry.get("properties", {})
-                .get("Link", {})
-                .get("url", None)
-            )
-            assigned_to = self._get_people_id_email(props.get("Assigned To", {}))
+        type_ = (
+            (props.get("Data Type", {}).get("select") or {}).get("name", "")
+        )
 
-            characterization = self._get_multiselect(props.get("Characterization", {}))
-            # Relation to Sample
-            sample = self._get_relation_id(entry['properties']['🧫 Samples'])
+        upload_method_ = (
+            (props.get("Upload Method", {}).get("select") or {}).get("name", "")
+        )
 
-            # Metadata from Notion
-            created_by = entry.get("created_by", {}).get("id", "")
-            created_time = entry.get("created_time", "")
-            last_edited_by = entry.get("last_edited_by", {}).get("id", "")
-            last_edited_time = entry.get("last_edited_time", "")
+        comment = self._get_text(entry, 'Brief Description')
+        characterization = self._get_multiselect(props.get("Characterization", {}))
 
-            # Optional description/comment property
-            comment = self._get_text(entry, 'Brief description')
+        sample = self._get_relation_id(entry['properties']['Sample'])[0]
+        _sample_page = self.notion.pages.retrieve(sample)
+        sample_dict = self.get_data_from_sample_entry(_sample_page)
+        assigned_to = self._get_people_id_email(props.get("Assigned To", {}))
+        sources = self._get_relation_id(props.get("Source", {}))
 
-            # Optional Source relation, if present
-            source = (
-                self._get_relation_id(entry['properties']['👥 Source'])
-                if '👥 Source' in entry['properties']
-                else []
-            )
+        #upload qr_code
+        qr_ = QRCode(entry['url'])
+        img = qr_.generate_qrimage()
+        qr_name = name+"_qr.png"
 
-            sample_page = self.notion.pages.retrieve(sample[0])
-            sample_dict = self.get_data_from_sample_entry(sample_page)
+        upload_qr(img, id, self.token, qr_name)
+        
+        file_names = []
+        link = None
+        file_dir = ""
 
-            self.results[id] = {
-                'EntryID': id,
-                'CommonName': name,
-                #'type': type_,
-                'FileLinks': link,
-                'NearestSampleID': sample[0] if sample else '',
-                'iCreated': created_by,
-                'iUsage': assigned_to,
-                'YourName': last_edited_by,
-                'DateTime': last_edited_time,
-                'Characterization': characterization,
-                'CharDetails': comment,
-                'ResearchGroup': source,
-                'History': sample_dict['History'],
-                'Radiation': sample_dict['Radiation'],
-                'Synthesis': sample_dict['Synthesis'],
-                'Composition': sample_dict['Composition'],
-                'Elements': sample_dict['Elements'],
-                "FirstSampleID": sample_dict['FirstSampleID'],
+        if upload_method_ == 'link':
+            link = (props.get("Link", {}).get("url", None))
+
+        if upload_method_ == 'file':
+            files_ = props['Files']['files']
+
+            file_dir = os.path.join(folder,
+                                        sample_dict['Composition'].replace("/", "_"),
+                                        sample_dict['CommonName'].replace("/", "_")
+                                        )
+            os.makedirs(file_dir, exist_ok=True)
+
+            for fs in files_:
+                filename = fs['name']
+                url = fs['file']['url']
+                file_names.append(filename)
+
+                file_path = os.path.join(file_dir, filename)
+
+                r = requests.get(url)
+                with open(file_path, "wb") as f:
+                    f.write(r.content)
+
+                qr_.save_qr(img, file_dir, qr_name)
+
+        #upload qr
+        
+
+
+            return {
+            "EntryID": id,
+            "CommonName": name,
+            "Composition": sample_dict['Composition'],
+            "Elements": sample_dict['Elements'],
+
+            "Characterization": characterization,
+            "CharDetails": comment,
+            "DataType": type_,
+
+            "FileLinks": link,
+            "FileFolder": file_dir,
+            "FileHeader": file_names,
+
+
+            "Synthesis": sample_dict['Synthesis'],
+            "SynDetails": sample_dict['SynDetails'],
+            "Processing": sample_dict['Processing'],
+            "ProcDetails": sample_dict['ProcDetails'],
+            "Radiation": sample_dict['ProcDetails'],
+            "Location": sample_dict['Location'],
+
+            "iCreated": entry["created_by"]["id"],
+            "iUsage": assigned_to,
+            "YourName": entry["last_edited_by"]["id"],
+            "DateTime": entry["last_edited_time"],
+            "ResearchGroup": sources,
+
+            "NearestSampleID": sample,
+            "History": sample_dict['History'],
+            "FirstSampleID": sample_dict['FirstSampleID']
             }
 
     def upload_people(self, database_id):
@@ -257,6 +299,7 @@ class NotionLoader:
     @staticmethod
     def _get_relation_id(entry):
         return [rel['id'] for rel in entry['relation']]
+    
     @staticmethod
     def _get_people_id_email( entry):
         """
@@ -354,6 +397,7 @@ class NotionLoader:
     def _datetime_to_iso(self, dt):
         """Convert datetime → Notion-compatible ISO string."""
         return dt.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
     def _load_last_timestamp(self, filename="notion_state.json", db='sample'):
         """Load last sync timestamp from file."""
         if os.path.exists(filename):
@@ -362,6 +406,7 @@ class NotionLoader:
                 if f"last_timestamp_{db}" in data:
                     return datetime.fromisoformat(data[f"last_timestamp_{db}"].replace("Z", "+00:00"))
         return None
+   
     def query_updated_pages(self, database_id, timestamp=None, db='sample'):
         """
         Query database for pages created or updated after `timestamp`.
@@ -390,6 +435,7 @@ class NotionLoader:
             self._save_last_timestamp(new_ts, db=db)
 
         return results
+  
     @staticmethod
     def _make_multiselect_property(property_name: str, values):
         """
@@ -425,7 +471,7 @@ class NotionLoader:
         history = [page_id, ]
         while flag:
             page = self.notion.pages.retrieve(page_id)
-            parent_sample = self._get_relation_id(page["properties"].get("🧫 Parent Sample", {}))
+            parent_sample = self._get_relation_id(page["properties"].get("Parent Sample", {}))
             parent_sample = parent_sample[0] if parent_sample else ""
             if parent_sample != "":
                 history.append(parent_sample)
